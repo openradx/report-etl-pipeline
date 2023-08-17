@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "sr-etl-pipe"
+version = "0.1.0"
+description = ""
+authors = ["Kai Schlamp <kai.schlamp@gmail.com>"]
+readme = "README.md"
+packages = [{ include = "sr_etl_pipe" }]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+dagster = "^1.4.5"
+dagster-webserver = "^1.4.5"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.dagster]
+module_name = "sr_etl_pipe"
