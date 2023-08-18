@@ -1,10 +1,10 @@
 [tool.poetry]
-name = "sr-etl-pipe"
+name = "report-etl-pipeline"
 version = "0.1.0"
 description = ""
 authors = ["Kai Schlamp <kai.schlamp@gmail.com>"]
 readme = "README.md"
-packages = [{ include = "sr_etl_pipe" }]
+packages = [{ include = "report_etl_pipeline" }]
 
 [tool.poetry.dependencies]
 python = "^3.11"
@@ -17,4 +17,4 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.dagster]
-module_name = "sr_etl_pipe"
+module_name = "report_etl_pipeline"
