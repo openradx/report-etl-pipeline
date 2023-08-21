@@ -2,13 +2,13 @@
 
 [[package]]
 name = "adit-client"
-version = "0.1.0"
+version = "0.2.0"
 description = "ADIT Client library to connect to an ADIT server."
 optional = false
 python-versions = ">=3.11,<4.0"
 files = [
-    {file = "adit_client-0.1.0-py3-none-any.whl", hash = "sha256:b94cc2995e06424b9ba27308a34df38644957a22191c6270ed78e0a1aa2bbd66"},
-    {file = "adit_client-0.1.0.tar.gz", hash = "sha256:99e708c7ff7c16f31980ba7f78bc4fd68ae0ecd40c3892586552824544475476"},
+    {file = "adit_client-0.2.0-py3-none-any.whl", hash = "sha256:f0ec95d76c2d9e75d85ced248a6c4d48e3747a03c6476c04b8926130dcd984ba"},
+    {file = "adit_client-0.2.0.tar.gz", hash = "sha256:c4235dc37dc065e9c7395bb1516c1fc391a4b36f57b1d0d6745ab39883340d9f"},
 ]
 
 [package.dependencies]
@@ -2279,4 +2279,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "d5e49b5d0c876a4dd657878bb43c8a3054303f25e2a197cbd4b9338d90adc514"
+content-hash = "d5d149e8e5a4e0d384f712dbc19599b956c85b03b541b3b90fe8fa935b29b4bf"
