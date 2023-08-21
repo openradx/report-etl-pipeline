@@ -10,7 +10,15 @@ packages = [{ include = "report_etl_pipeline" }]
 python = "^3.11"
 dagster = "^1.4.5"
 dagster-webserver = "^1.4.5"
+python-dotenv = "^1.0.0"
+adit-client = "^0.1.0"
 
+[tool.poetry.group.dev.dependencies]
+black = "^23.7.0"
+ipython = "^8.14.0"
+pyright = "^1.1.323"
+ruff = "^0.0.285"
+invoke = "^2.2.0"
 
 [build-system]
 requires = ["poetry-core"]
