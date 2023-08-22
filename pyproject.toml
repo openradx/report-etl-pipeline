@@ -19,6 +19,7 @@ ipython = "^8.14.0"
 pyright = "^1.1.323"
 ruff = "^0.0.285"
 invoke = "^2.2.0"
+ipykernel = "^6.25.1"
 
 [build-system]
 requires = ["poetry-core"]
