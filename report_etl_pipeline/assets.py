@@ -7,19 +7,37 @@ from dagster import (
 )
 
 from .resources import AditResource
+from .types import Report
 
 
 @asset(partitions_def=DailyPartitionsDefinition(start_date=datetime(2020, 1, 1)))
-def sr_datasets_from_synapse(context: AssetExecutionContext, adit: AditResource) -> list[str]:
-    print("1", context.partition_key)
-    print("2", context.partition_time_window)
-    print("3", adit.auth_token)
-    return ["xxx", "yyy", "zzz"]
+def reports_from_synapse(context: AssetExecutionContext, adit: AditResource) -> list[str]:
+    time_window = context.partition_time_window
+    datasets = adit.fetch_sr_from_synapse(time_window)
+
+    report: Report = {
+        "pacs_aet": "PACS_AET",
+        "pacs_name": "PACS_NAME",
+        "patient_id": "PATIENT_ID",
+        "patient_birth_date": datetime(2020, 1, 1).date(),
+        "patient_sex": "M",
+        "study_instance_uid": "STUDY_INSTANCE_UID",
+        "accession_number": "ACCESSION_NUMBER",
+        "study_description": "STUDY_DESCRIPTION",
+        "study_date": datetime(2020, 1, 1).date(),
+        "study_time": datetime(2020, 1, 1).time(),
+        "modalities_in_study": ["CT"],
+        "series_instance_uid": "SERIES_INSTANCE_UID",
+        "sop_instance_uid": "SOP_INSTANCE_UID",
+        "references": [],
+        "body": "foo,bar;zar",
+    }
+    return [report]
 
 
 @asset(partitions_def=DailyPartitionsDefinition(start_date=datetime(2020, 1, 1)))
-def resport_data(sr_datasets_from_synapse: list[str]) -> None:
-    print(sr_datasets_from_synapse)
+def reports_with_references(reports_from_synapse: list[str]) -> None:
+    pass
 
 
 # TODO:
