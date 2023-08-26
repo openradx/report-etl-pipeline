@@ -21,6 +21,10 @@ ruff = "^0.0.285"
 invoke = "^2.2.0"
 ipykernel = "^6.25.1"
 
+[tool.pyright]
+typeCheckingMode = "basic"
+reportUnnecessaryTypeIgnoreComment = true
+
 [tool.ruff]
 exclude = ["migrations"]
 line-length = 100

@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 from dagster import (
@@ -9,47 +10,54 @@ from dagster import (
     OutputContext,
 )
 
-from .types import Report
+from .types import Report, ReportWithReferences
 
 
 class ReportIOManager(ConfigurableIOManager):
     def __init__(self, storage_dir: str):
         self.storage_dir = Path(storage_dir)
 
-    def handle_output(self, context: OutputContext, obj: list[Report]):
+    def handle_output(self, context: OutputContext, obj: list[Report | ReportWithReferences]):
+        if obj is None:
+            return
+
         if not context.asset_partition_key:
             raise AssertionError("Missing partition key in IO manager")
 
+        records: list[dict[str, Any]] = []
         for report in obj:
-            report["patient_birth_date"] = report["patient_birth_date"].isoformat()
-            report["study_date"] = report["study_date"].isoformat()
-            report["study_time"] = report["study_time"].isoformat()
-            report["modalities_in_study"] = "|".join(report["modalities_in_study"])
-            report["references"] = "|".join(report["references"])
+            record: dict[str, Any] = {}
+            record.update(report)
+            record["modalities_in_study"] = "|".join(report["modalities_in_study"])
 
-        df = pd.DataFrame.from_records(obj)
+            if isinstance(report, ReportWithReferences):
+                record["references"] = "|".join(report["references"])
+
+        df = pd.DataFrame.from_records(records)
         filepath = self.storage_dir / f"reports-{context.asset_partition_key}.csv.gz"
         df.to_csv(filepath, compression="gzip")
 
-    def load_input(self, context: InputContext) -> list[Report]:
+    def load_input(self, context: InputContext) -> list[Report | ReportWithReferences]:
         if not context.asset_partition_key:
             raise AssertionError("Missing partition key in IO manager")
 
         filepath = self.storage_dir / f"reports-{context.asset_partition_key}.csv.gz"
-        df = pd.read_csv(filepath, compression="gzip")
-        data = df.to_dict("records")
+        df: pd.DataFrame = pd.read_csv(filepath, compression="gzip")
+        records = df.to_dict("records")
 
-        for item in data:
-            item["patient_birth_date"] = pd.to_datetime(item["patient_birth_date"]).date()
-            item["study_date"] = pd.to_datetime(item["study_date"]).date()
-            item["study_time"] = pd.to_datetime(item["study_time"]).time()
-            item["modalities_in_study"] = item["modalities_in_study"].split("|")
-            item["references"] = item["references"].split("|")
+        for record in records:
+            record["modalities_in_study"] = record["modalities_in_study"].split("|")
 
-        return data
+            if "references" in record:
+                record["references"] = record["references"].split("|")
+
+        return records  # type: ignore
 
 
 class ReportIOManagerFactory(ConfigurableIOManagerFactory):
     def create_io_manager(self, context: InitResourceContext) -> ReportIOManager:
+        if not context.instance:
+            raise AssertionError("Missing instance in IO manager factory")
+
         storage_dir = context.instance.storage_directory()
         return ReportIOManager(storage_dir)
