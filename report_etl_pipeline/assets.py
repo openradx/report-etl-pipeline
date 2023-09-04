@@ -14,16 +14,16 @@ from .types import Report, ReportWithReferences
 partition_def = DailyPartitionsDefinition(start_date=datetime(2020, 1, 1))
 
 
-class SynapseConfig(Config):
-    name: str = os.environ["SYNAPSE_NAME"]
-    ae_title: str = os.environ["SYNAPSE_AE_TITLE"]
+class PacsConfig(Config):
+    name: str = os.environ.get("PACS_NAME", "")
+    ae_title: str = os.environ.get("PACS_AE_TITLE", "")
 
 
 @asset(partitions_def=partition_def)
-def reports_from_synapse(
-    context: AssetExecutionContext, config: SynapseConfig, adit: AditResource
+def reports_from_adit(
+    context: AssetExecutionContext, config: PacsConfig, adit: AditResource
 ) -> list[Report]:
-    datasets = adit.fetch_structured_reports(config.ae_title, context.partition_time_window)
+    datasets = adit.fetch_srs(config.ae_title, context.partition_time_window)
 
     reports: list[Report] = []
     for ds in datasets:
@@ -67,10 +67,10 @@ def reports_from_synapse(
 
 @asset(partitions_def=partition_def)
 def reports_with_synapse_references(
-    reports_from_synapse: list[Report], adit: AditResource
+    reports_from_adit: list[Report], adit: AditResource
 ) -> list[ReportWithReferences]:
     report_with_references: list[ReportWithReferences] = []
-    for report in reports_from_synapse:
+    for report in reports_from_adit:
         images = adit.fetch_reference_images(report["study_instance_uid"], 10)
         # TODO: Extract reference URL from images and put into report
         report_with_reference: ReportWithReferences = {**report, "references": []}

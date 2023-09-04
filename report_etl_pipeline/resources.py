@@ -10,7 +10,7 @@ from .types import RadisReport
 
 
 class AditResource(ConfigurableResource):
-    adit_host: str
+    host: str
     auth_token: str
     max_search_results: int = Field(
         default=100,
@@ -23,10 +23,10 @@ class AditResource(ConfigurableResource):
     _client: AditClient = PrivateAttr()
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
-        self._client = AditClient(server_url=self.adit_host, auth_token=self.auth_token)
+        self._client = AditClient(server_url=self.host, auth_token=self.auth_token)
         return super().setup_for_execution(context)
 
-    def fetch_structured_reports(self, ae_title: str, time_window: TimeWindow) -> list[Dataset]:
+    def fetch_srs(self, ae_title: str, time_window: TimeWindow) -> list[Dataset]:
         def _fetch_datasets(start: datetime, end: datetime) -> list[Dataset]:
             start_date = start.strftime("%Y-%m-%d")
             end_date = end.strftime("%Y-%m-%d")

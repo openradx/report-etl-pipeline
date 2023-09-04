@@ -9,8 +9,8 @@ defs = Definitions(
     resources={
         "io_manager": io_managers.ReportIOManagerFactory(),
         "adit": resources.AditResource(
-            adit_host=EnvVar("ADIT_HOST"),
-            auth_token=EnvVar("AUTH_TOKEN"),
+            host=EnvVar("ADIT_HOST"),
+            auth_token=EnvVar("ADIT_AUTH_TOKEN"),
         ),
     },
 )
