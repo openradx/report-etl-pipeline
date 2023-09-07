@@ -1,8 +1,10 @@
 from datetime import date, datetime
-from typing import Literal, TypedDict
+from typing import Literal
+
+from pydantic import BaseModel
 
 
-class Report(TypedDict):
+class Report(BaseModel):
     pacs_aet: str
     pacs_name: str
     patient_id: str
@@ -23,7 +25,7 @@ class ReportWithReferences(Report):
     references: list[str]
 
 
-class RadisReport(TypedDict):
+class RadisReport(BaseModel):
     pacs_aet: str
     pacs_name: str
     patient_id: str

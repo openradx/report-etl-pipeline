@@ -1,16 +1,16 @@
 storage:
   sqlite:
-    base_dir: ./env/dagster-data
+    base_dir: ./env/data
 compute_logs:
   module: dagster.core.storage.local_compute_log_manager
   class: LocalComputeLogManager
   config:
-    base_dir: ./env/dagster-data
+    base_dir: ./env/logs
 local_artifact_storage:
   module: dagster.core.storage.root
   class: LocalArtifactStorage
   config:
-    base_dir: ./env/dagster-data
+    base_dir: ./env/artifacts
 telemetry:
   enabled: false
 nux:
