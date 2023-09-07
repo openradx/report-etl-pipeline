@@ -11,8 +11,7 @@
     },
     // https://github.com/orgs/community/discussions/50403
     // "initializeCommand": "docker system prune --all --force",
-    "postCreateCommand": "poetry install && npm install",
-    "postStartCommand": "poetry run invoke init-workspace --type codespaces",
+    "postCreateCommand": "poetry install",
     "customizations": {
         "vscode": {
             "extensions": [
