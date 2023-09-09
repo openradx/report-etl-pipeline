@@ -4,3 +4,20 @@ image:
 tasks:
   - name: setup
     init: poetry install
+
+vscode:
+  extensions:
+    - "charliermarsh.ruff"
+    - "davidanson.vscode-markdownlint"
+    - "eamodio.gitlens"
+    - "esbenp.prettier-vscode"
+    - "foxundermoon.shell-format"
+    - "mhutchie.git-graph"
+    - "mikestead.dotenv"
+    - "ms-azuretools.vscode-docker"
+    - "ms-pyright.pyright" # Replaces pylance as it is not available in Open VSX
+    - "ms-python.black-formatter"
+    - "ms-python.python"
+    - "streetsidesoftware.code-spell-checker"
+    - "tamasfe.even-better-toml"
+    - "wayou.vscode-todo-highlight"
