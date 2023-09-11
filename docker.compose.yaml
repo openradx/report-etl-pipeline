@@ -2,6 +2,8 @@ version: '3.7'
 
 services:
   dagster:
+    env_file:
+      - ./.env.prod
     build:
       target: production
     ports:
