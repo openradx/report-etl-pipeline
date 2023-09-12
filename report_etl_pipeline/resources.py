@@ -7,6 +7,8 @@ from dagster._core.execution.context.init import InitResourceContext
 from pydantic import Field, PrivateAttr
 from pydicom import Dataset
 
+from report_etl_pipeline.utils import filter_radiological_report_series
+
 from .models import RadisReport
 
 
@@ -76,16 +78,14 @@ class AditResource(ConfigurableResource):
         series_list = self._client.search_for_series(
             ae_title, study_instance_uid, {"Modality": "SR"}
         )
-
-        # We filter out the radiological reports as there may be other types of documents,
-        # e.g. 'Radiation Dose Information'.
-        p = re.compile("Radiological Report", re.IGNORECASE)
-        series_list = [series for series in series_list if p.search(series.SeriesDescription)]
+        series_list = filter_radiological_report_series(series_list)
 
         if len(series_list) == 0:
             return None
         if len(series_list) > 1:
-            raise AssertionError(f"Multiple radiological reports in study: {study_instance_uid}")
+            raise AssertionError(
+                f"Multiple radiological report series in study: {study_instance_uid}"
+            )
 
         series = series_list[0]
         instances = self._client.retrieve_series(
@@ -95,7 +95,10 @@ class AditResource(ConfigurableResource):
         if len(instances) == 0:
             raise AssertionError(f"Missing report instance in study: {study_instance_uid}")
         if len(instances) > 1:
-            raise AssertionError(f"Multiple report instances in study: {study_instance_uid}")
+            self._logger.warn(
+                f"Multiple radiological report instances in study {study_instance_uid}. "
+                "Only the first one will be used."
+            )
 
         return instances[0]
 
