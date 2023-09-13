@@ -29,40 +29,40 @@ if len(studies) == 0:
 if len(studies) > 1:
     raise ValueError("Multiple studies found with this Study Instance UID")
 
+print("Study:")
 print(studies[0])
-print("--------------------------------")
+print("==========")
 
 series_list = client.search_for_series(pacs_ae_title, study_instance_uid, {"Modality": "SR"})
 series_list = filter_radiological_report_series(series_list)
 
 if len(series_list) == 0:
     raise ValueError("Missing SR series in this study.")
+# if len(series_list) > 1:
+#     raise ValueError("Multiple radiological report series in this study")
 
-if len(series_list) == 1:
-    sr_series = series_list[0]
-else:
-    p = re.compile("Radiological Report", re.IGNORECASE)
-    series_list = [series for series in series_list if p.search(series.SeriesDescription)]
+all_instances = []
+for series in series_list:
+    print("Series:")
+    print(series)
 
-    if len(series_list) > 1:
-        raise ValueError("Multiple radiological reports in this study")
+    instances = client.retrieve_series(pacs_ae_title, study_instance_uid, series.SeriesInstanceUID)
+    all_instances = all_instances + instances
 
-    sr_series = series_list[0]
+    if len(instances) == 0:
+        raise ValueError("Missing radiological report instance")
+    # if len(instances) > 1:
+    #     raise ValueError("Multiple radiological report instances")
 
+    for instance in instances:
+        print("\nInstance:")
+        print(instance)
 
-print(sr_series)
-print("--------------------------------")
+        print("\nReport:")
+        report_text = extract_report_text(instances[0])
+        print(report_text)
 
-instances = client.retrieve_series(pacs_ae_title, study_instance_uid, sr_series.SeriesInstanceUID)
+    print("----------")
 
-if len(instances) == 0:
-    raise ValueError("Missing radiological report instance")
-if len(instances) > 1:
-    raise ValueError("Multiple radiological report instances")
-
-print(instances[0])
-print("--------------------------------")
-
-print("Radiological report:")
-report_text = extract_report_text(instances[0])
-print(report_text)
+print("Summary:")
+print(f"Found {len(all_instances)} report instances in {len(series_list)} series.")

@@ -32,13 +32,17 @@ def reports_from_adit(
     end = time_window.end - timedelta(seconds=1)
 
     studies = adit.fetch_studies_with_sr(config.pacs_ae_title, start, end)
-    context.log.debug(f"{len(studies)} studies found to extract reports from.")
+    context.log.info(f"{len(studies)} studies found to extract reports from.")
 
     reports: list[Report] = []
     for study in studies:
         instance = adit.fetch_report_dataset(config.pacs_ae_title, study.StudyInstanceUID)
         if not instance:
-            context.log.debug(f"No report found in study {study.StudyInstanceUID}.")
+            context.log.debug(f"No radiological report found in study {study.StudyInstanceUID}.")
+            continue
+        if not instance.get("AccessionNumber"):
+            # External studies may not have an accession number. We skip those.
+            context.log.debug(f"Missing accession number in study {study.StudyInstanceUID}.")
             continue
 
         # ModalitiesInStudy can by of type str or MultiValue and must be explicitly

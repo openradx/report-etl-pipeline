@@ -4,6 +4,10 @@ run_coordinator:
   config:
     max_concurrent_runs: 3
 
+# run_retries:
+#   enabled: true
+#   max_retries: 3
+
 telemetry:
   enabled: false
 

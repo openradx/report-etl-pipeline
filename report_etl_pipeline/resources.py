@@ -1,4 +1,3 @@
-import re
 from datetime import datetime, timedelta
 
 from adit_client import AditClient
@@ -83,8 +82,9 @@ class AditResource(ConfigurableResource):
         if len(series_list) == 0:
             return None
         if len(series_list) > 1:
-            raise AssertionError(
-                f"Multiple radiological report series in study: {study_instance_uid}"
+            self._logger.warn(
+                f"Multiple radiological report series in study {study_instance_uid}."
+                "Only the first one will be used."
             )
 
         series = series_list[0]
@@ -93,7 +93,7 @@ class AditResource(ConfigurableResource):
         )
 
         if len(instances) == 0:
-            raise AssertionError(f"Missing report instance in study: {study_instance_uid}")
+            raise AssertionError(f"Missing report instance in study {study_instance_uid}.")
         if len(instances) > 1:
             self._logger.warn(
                 f"Multiple radiological report instances in study {study_instance_uid}. "
