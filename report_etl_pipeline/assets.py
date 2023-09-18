@@ -8,6 +8,7 @@ from dagster import (
     DailyPartitionsDefinition,
     asset,
 )
+from requests import HTTPError
 
 from .models import Report, ReportWithReferences
 from .resources import AditResource
@@ -36,7 +37,23 @@ def reports_from_adit(
 
     reports: list[Report] = []
     for study in studies:
-        instance = adit.fetch_report_dataset(config.pacs_ae_title, study.StudyInstanceUID)
+        try:
+            instance = adit.fetch_report_dataset(config.pacs_ae_title, study.StudyInstanceUID)
+        except HTTPError as err:
+            # We handle bad requests here and skip those studies. This can happen for example
+            # when an external study does have an invalid StudyInstanceUID.
+            if err.response.status_code == 400:
+                context.log.error(err)
+                context.log.error(err.response.json())
+                context.log.error(
+                    f"Failed to fetch radiological report for study {study.StudyInstanceUID}."
+                    "Skipping this study."
+                )
+                continue
+
+            # We re-raise on other errors, like internal server errors.
+            raise err
+
         if not instance:
             context.log.debug(f"No radiological report found in study {study.StudyInstanceUID}.")
             continue
@@ -74,11 +91,7 @@ def reports_from_adit(
 
     num_reports = len(reports)
     context.log.info(f"Found {num_reports} reports between {start} and {end}.")
-    context.add_output_metadata(
-        metadata={
-            "num_reports": num_reports,
-        }
-    )
+    context.add_output_metadata(metadata={"num_reports": num_reports})
 
     return reports
 
