@@ -8,11 +8,13 @@ from dagster import (
     DailyPartitionsDefinition,
     asset,
 )
+from pydicom import Dataset
 from requests import HTTPError
 
-from .models import Report, ReportWithReferences
+from .errors import FetchingError
+from .models import RadisReport, Report, ReportWithReferences
 from .resources import AditResource
-from .utils import extract_report_text
+from .utils import convert_to_python_date, convert_to_python_time, extract_report_text
 
 partition_def = DailyPartitionsDefinition(start_date=datetime(2020, 1, 1))
 
@@ -26,7 +28,7 @@ class PacsConfig(Config):
 def reports_from_adit(
     context: AssetExecutionContext, config: PacsConfig, adit: AditResource
 ) -> list[Report]:
-    context.log.info("Fetching SR datasets from ADIT.")
+    context.log.info(f"Fetching reports from ADIT for partition {context.partition_key}.")
 
     time_window = context.partition_time_window
     start = time_window.start
@@ -35,24 +37,17 @@ def reports_from_adit(
     studies = adit.fetch_studies_with_sr(config.pacs_ae_title, start, end)
     context.log.info(f"{len(studies)} studies found to extract reports from.")
 
-    reports: list[Report] = []
+    fetched_reports: list[Report] = []
+    failed_studies: list[Dataset] = []
     for study in studies:
         try:
             instance = adit.fetch_report_dataset(config.pacs_ae_title, study.StudyInstanceUID)
-        except HTTPError as err:
-            # We handle bad requests here and skip those studies. This can happen for example
-            # when an external study does have an invalid StudyInstanceUID.
-            if err.response.status_code == 400:
-                context.log.error(err)
+        except Exception as err:
+            if isinstance(err, HTTPError):
                 context.log.error(err.response.json())
-                context.log.error(
-                    f"Failed to fetch radiological report for study {study.StudyInstanceUID}."
-                    "Skipping this study."
-                )
-                continue
-
-            # We re-raise on other errors, like internal server errors.
-            raise err
+            context.log.error(f"Failed to fetch dataset of study {study.StudyInstanceUID}: {err}")
+            failed_studies.append(study)
+            continue
 
         if not instance:
             context.log.debug(f"No radiological report found in study {study.StudyInstanceUID}.")
@@ -62,13 +57,13 @@ def reports_from_adit(
             context.log.debug(f"Missing accession number in study {study.StudyInstanceUID}.")
             continue
 
-        # ModalitiesInStudy can by of type str or MultiValue and must be explicitly
+        # ModalitiesInStudy can be of type str or MultiValue and must be explicitly
         # converted to a list
         modalities_in_study = list(study.ModalitiesInStudy)
 
         body = extract_report_text(instance)
         if not body:
-            context.log.error(f"Missing report text in study {study.StudyInstanceUID}.")
+            context.log.warn(f"Missing report text in study {study.StudyInstanceUID}.")
             continue
 
         report = Report(
@@ -87,13 +82,27 @@ def reports_from_adit(
             sop_instance_uid=instance.SOPInstanceUID,
             body=body,
         )
-        reports.append(report)
+        fetched_reports.append(report)
 
-    num_reports = len(reports)
-    context.log.info(f"Found {num_reports} reports between {start} and {end}.")
-    context.add_output_metadata(metadata={"num_reports": num_reports})
+    num_reports = len(fetched_reports)
+    num_failed = len(failed_studies)
 
-    return reports
+    if num_reports == 0 and len(failed_studies) > 0:
+        raise FetchingError(f"All report fetches failed for partition {context.partition_key}.")
+
+    if num_failed > 0:
+        studies_label = "studies" if num_failed > 1 else "study"
+        context.log.error(f"Failed to fetch instances of {num_failed} {studies_label}.")
+
+    context.log.info(f"Found {num_reports} reports for partition {context.partition_key}.")
+    context.add_output_metadata(
+        metadata={
+            "num_reports": num_reports,
+            "num_failed": num_failed,
+        }
+    )
+
+    return fetched_reports
 
 
 @asset(partitions_def=partition_def)
@@ -137,5 +146,18 @@ def reports_with_references(
 
 
 @asset(partitions_def=partition_def)
-def radis_reports(reports_with_references: list[Report]) -> None:
-    pass
+def radis_reports(reports_with_references: list[ReportWithReferences]) -> None:
+    for report in reports_with_references:
+        document_id = f"{report.pacs_aet}_{report.accession_number}"
+        patient_birth_date = convert_to_python_date(report.patient_birth_date)
+        study_date = convert_to_python_date(report.study_date)
+        study_time = convert_to_python_time(report.study_time)
+        study_datetime = datetime.combine(study_date, study_time)
+        radis_report = RadisReport.parse_obj(
+            {
+                **report.dict(),
+                "document_id": document_id,
+                "patient_birth_date": patient_birth_date.isoformat(),
+                "study_datetime": study_datetime.isoformat(),
+            }
+        )

@@ -26,10 +26,11 @@ class ReportWithReferences(Report):
 
 
 class RadisReport(BaseModel):
+    document_id: str
     pacs_aet: str
     pacs_name: str
     patient_id: str
-    patient_birth_data: date
+    patient_birth_date: date
     patient_sex: Literal["M", "F", "O"]
     study_instance_uid: str
     accession_number: str
