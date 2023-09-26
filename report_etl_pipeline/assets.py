@@ -9,7 +9,6 @@ from dagster import (
     asset,
 )
 from pydicom import Dataset
-from requests import HTTPError
 
 from .errors import FetchingError
 from .models import RadisReport, Report, ReportWithReferences
@@ -43,8 +42,6 @@ def reports_from_adit(
         try:
             instance = adit.fetch_report_dataset(config.pacs_ae_title, study.StudyInstanceUID)
         except Exception as err:
-            if isinstance(err, HTTPError):
-                context.log.error(err.response.json())
             context.log.error(f"Failed to fetch dataset of study {study.StudyInstanceUID}: {err}")
             failed_studies.append(study)
             continue
