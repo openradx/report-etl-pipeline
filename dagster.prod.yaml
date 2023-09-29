@@ -4,9 +4,14 @@ run_coordinator:
   config:
     max_concurrent_runs: 3
 
-# run_retries:
-#   enabled: true
-#   max_retries: 3
+storage:
+  postgres:
+    postgres_db:
+      username: postgres
+      password: postgres
+      hostname: postgres
+      db_name: postgres
+      port: 5432
 
 telemetry:
   enabled: false

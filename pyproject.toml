@@ -11,6 +11,7 @@ dagster = "^1.4.5"
 dagster-webserver = "^1.4.5"
 adit-client = "^0.2.0"
 pandas = "^2.0.3"
+dagster-postgres = "^0.20.17"
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.7.0"
