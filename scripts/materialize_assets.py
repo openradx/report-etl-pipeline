@@ -1,3 +1,7 @@
+"""
+This script is used to materialize the assets for a given partition date from the command line
+and without using the Dagster Web UI.
+"""
 import argparse
 import os
 from pathlib import Path
@@ -11,20 +15,17 @@ from report_etl_pipeline.resources import AditResource
 
 load_dotenv(override=True)
 
-PROJECT_DIR = Path(__file__).resolve().parent.parent
-ARTIFACTS_DIR = PROJECT_DIR / "env" / "artifacts"
-
 host = os.environ["ADIT_HOST"]
 token = os.environ["ADIT_AUTH_TOKEN"]
 
 
-def materialize_assets(partition: str):
+def materialize_assets(partition: str, artifacts_dir: str):
     materialize(
         [reports_from_adit, reports_cleaned, reports_with_references],
         partition_key=partition,
         resources={
             "adit": AditResource(host=host, auth_token=token),
-            "io_manager": ReportIOManager(base_dir=ARTIFACTS_DIR.as_posix()),
+            "io_manager": ReportIOManager(artifacts_dir=artifacts_dir),
         },
         run_config={
             "ops": {
@@ -42,6 +43,11 @@ def materialize_assets(partition: str):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("partition", help="The partition date to materialize, e.g. 2023-08-31")
+    parser.add_argument("-d", "--dir", help="The directory to store the artifacts in", default="./")
     args = parser.parse_args()
 
-    materialize_assets(args.partition)
+    if not Path(args.dir).exists() or not Path(args.dir).is_dir():
+        raise ValueError(f"Invalid directory to store artifacts: {args.dir}")
+    artifacts_dir = Path(args.dir).absolute().as_posix()
+
+    materialize_assets(args.partition, artifacts_dir)
