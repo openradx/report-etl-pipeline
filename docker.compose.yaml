@@ -13,7 +13,7 @@ services:
     command: dagster dev -h 0.0.0.0 -m report_etl_pipeline
 
   postgres:
-    image: postgres:13.11
+    image: postgres:16.1
     environment:
       POSTGRES_PASSWORD: "postgres"
     volumes:
