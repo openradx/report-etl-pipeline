@@ -6,8 +6,10 @@ from dagster import (
     AssetExecutionContext,
     Config,
     DailyPartitionsDefinition,
+    EnvVar,
     asset,
 )
+from pydantic import Field
 from pydicom import Dataset
 
 from .errors import FetchingError
@@ -19,8 +21,18 @@ partition_def = DailyPartitionsDefinition(start_date=datetime(2020, 1, 1))
 
 
 class PacsConfig(Config):
-    pacs_name: str = os.environ.get("PACS_NAME", "")
-    pacs_ae_title: str = os.environ.get("PACS_AE_TITLE", "")
+    pacs_name: str = Field(
+        default=EnvVar("PACS_NAME"),
+        description=(
+            "The name of the PACS to query for reports (also stored in the report metadata)."
+        ),
+    )
+    pacs_ae_title: str = Field(
+        default=EnvVar("PACS_AE_TITLE"),
+        description=(
+            "The AE title of the PACS to query for reports (also stored in the report metadata)."
+        ),
+    )
 
 
 @asset(partitions_def=partition_def)
