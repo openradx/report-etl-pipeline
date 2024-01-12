@@ -15,9 +15,9 @@ from .models import Report, ReportWithReferences
 
 
 class ReportIOManager(IOManager):
-    def __init__(self, base_dir: str):
-        makedirs(base_dir, exist_ok=True)
-        self.base_dir = base_dir
+    def __init__(self, artifacts_dir: str):
+        makedirs(artifacts_dir, exist_ok=True)
+        self.artifacts_dir = artifacts_dir
 
     def handle_output(self, context: OutputContext, obj: list[Report | ReportWithReferences]):
         if obj is None:
@@ -38,7 +38,7 @@ class ReportIOManager(IOManager):
             records.append(record)
 
         df = pd.DataFrame.from_records(records)
-        filepath = Path(self.base_dir) / f"reports-{context.asset_partition_key}.csv.gz"
+        filepath = Path(self.artifacts_dir) / f"reports-{context.asset_partition_key}.csv.gz"
         df.to_csv(filepath, compression="gzip")
 
         context.log.info(f"Saved {len(records)} to {filepath}.")
@@ -47,7 +47,7 @@ class ReportIOManager(IOManager):
         if not context.asset_partition_key:
             raise AssertionError("Missing partition key in IO manager")
 
-        filepath = Path(self.base_dir) / f"reports-{context.asset_partition_key}.csv.gz"
+        filepath = Path(self.artifacts_dir) / f"reports-{context.asset_partition_key}.csv.gz"
         df: pd.DataFrame = pd.read_csv(filepath, compression="gzip", dtype=str)
         records = df.to_dict("records")
 
@@ -66,9 +66,16 @@ class ReportIOManager(IOManager):
 
 
 class ReportIOManagerFactory(ConfigurableIOManagerFactory):
+    artifacts_dir: str | None = None
+
     def create_io_manager(self, context: InitResourceContext) -> ReportIOManager:
         if not context.instance:
             raise AssertionError("Missing instance in IO manager factory")
 
-        storage_dir = context.instance.storage_directory()
-        return ReportIOManager(storage_dir)
+        if self.artifacts_dir is not None:
+            artifacts_dir = Path(self.artifacts_dir).absolute().as_posix()
+        else:
+            artifacts_dir = context.instance.storage_directory()
+        Path(artifacts_dir).mkdir(parents=True, exist_ok=True)
+
+        return ReportIOManager(artifacts_dir)
