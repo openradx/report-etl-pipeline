@@ -18,7 +18,8 @@ class AditResource(ConfigurableResource):
         default=199,
         description=(
             "The maximum number of SR series to query. Each PACS has a maximum result count. "
-            "If the number of results is higher than this number we must split the search."
+            "If the number of results is higher than this number will be automatically split "
+            "during search."
         ),
     )
 
