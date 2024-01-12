@@ -136,7 +136,7 @@ def reports_with_references(
             references.append(base_url + report.accession_number)
 
         reports_with_references.append(
-            ReportWithReferences.parse_obj({**report.dict(), "references": references})
+            ReportWithReferences.model_validate({**report.model_dump(), "references": references})
         )
 
     return reports_with_references
@@ -150,11 +150,12 @@ def radis_reports(reports_with_references: list[ReportWithReferences]) -> None:
         study_date = convert_to_python_date(report.study_date)
         study_time = convert_to_python_time(report.study_time)
         study_datetime = datetime.combine(study_date, study_time)
-        radis_report = RadisReport.parse_obj(
+        radis_report = RadisReport.model_validate(
             {
-                **report.dict(),
+                **report.model_dump(),
                 "document_id": document_id,
                 "patient_birth_date": patient_birth_date.isoformat(),
                 "study_datetime": study_datetime.isoformat(),
             }
         )
+        # TODO: Store report in RADIS
