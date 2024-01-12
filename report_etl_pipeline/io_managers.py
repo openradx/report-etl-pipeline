@@ -56,9 +56,9 @@ class ReportIOManager(IOManager):
             record["modalities_in_study"] = record["modalities_in_study"].split("|")
             if "references" in record:
                 record["references"] = record["references"].split("|")
-                reports.append(ReportWithReferences.parse_obj(record))
+                reports.append(ReportWithReferences.model_validate(record))
             else:
-                reports.append(Report.parse_obj(record))
+                reports.append(Report.model_validate(record))
 
         context.log.info(f"Loaded {len(records)} records from {filepath}.")
 
