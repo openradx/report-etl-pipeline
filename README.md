@@ -6,18 +6,18 @@ Report ETL Pipeline is a [Dagster](https://dagster.io/) project to extract radio
 
 ## Development
 
-- Make sure to have a `.env` file (see `example.env` template).
-- Artifacts are stored according to `.env`.
-- Uses file based SQLite database with files in `dagster_home` folder for Dagster stuff.
-- Start Dagster UI with `inv dagster-dev`.
+- Copy `example.env` to `.env` and edit the settings in there.
+- Artifacts are stored according to `ARTIFACTS_DIR` in `.env`. If `ARTIFACTS_DIR` is not set then the files are stored in the `dagster_home` folder under `storage`.
+- The dev environment uses a file based SQLite database with files in `dagster_home` folder for Dagster stuff.
+- Start Dagster UI with `inv dagster-dev`, which is then accessible under `http://localhost:3000` (make sure the port is forwarded by VS Code, see Ports tab).
 - Alternatively, run a single job from command line, e.g. `python ./scripts/materialize_assets.py -d ./artifacts/ 2023-01-01`.
 
 ## Production
 
-- Production uses a Docker compose based setup with PostgreSQL for Dagster internal data. It also uses Nginx for basic auth.
-- Make sure to have a `.env.prod` file (see `example.env` template).
-- Artifacts are stored according to `ARTIFACTS_DIR` in `.env.prod`. Cave, it's inside the container if no extra folder is mounted.
+- Production uses a Docker compose based setup with PostgreSQL for Dagster internal data. It also uses Nginx for basic auth and SSL encryption.
 - Generate a password file for basic authentication by using `htpasswd -c .htpasswd <username>` (needs apache2-utils to be installed).
-- Attach the virtual environment with `poetry shell`.
-- Start the stack with `inv compose-up`.
-- Dagster can be accessed on localhost on port 8888.
+- Generate SSL certificate with `openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout ./ssl.key -out ./ssl.crt` (nothing has to be filled out)
+- Copy `example.env` to `.env.prod` and edit the settings in there.
+- Artifacts are stored according to `ARTIFACTS_DIR` in `.env.prod`. Cave, it's inside the container if no extra folder is mounted.
+- Attach the virtual environment with `poetry shell` and then start the stack with `inv compose-up`.
+- Dagster UI can now be accessed on `https://localhost:8888` (make sure the port is forwarded by VS Code, see Ports tab).

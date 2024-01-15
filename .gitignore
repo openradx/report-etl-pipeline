@@ -166,3 +166,7 @@ dagster_home/*
 
 # htpasswd files (used by Nginx auth_basic_user_file directive)
 .htpasswd
+
+# SSL certificates (used by Nginx ssl_certificate directive)
+ssl.crt
+ssl.key
