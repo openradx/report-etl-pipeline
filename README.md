@@ -14,7 +14,10 @@ Report ETL Pipeline is a [Dagster](https://dagster.io/) project to extract radio
 
 ## Production
 
+- Production uses a Docker compose based setup with PostgreSQL for Dagster internal data. It also uses Nginx for basic auth.
 - Make sure to have a `.env.prod` file (see `example.env` template).
-- Uses a container based setup with PostgreSQL for Dagster stuff.
-- Artifacts are stored according to `.env.prod` (Cave, inside the container if no extra folder is mounted).
-- Start environment with `inv compose-up`.
+- Artifacts are stored according to `ARTIFACTS_DIR` in `.env.prod`. Cave, it's inside the container if no extra folder is mounted.
+- Generate a password file for basic authentication by using `htpasswd -c .htpasswd <username>` (needs apache2-utils to be installed).
+- Attach the virtual environment with `poetry shell`.
+- Start the stack with `inv compose-up`.
+- Dagster can be accessed on localhost on port 8888.
