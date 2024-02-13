@@ -14,7 +14,6 @@ pandas = "^2.0.3"
 dagster-postgres = "^0.22.4"
 
 [tool.poetry.group.dev.dependencies]
-black = "^23.7.0"
 ipython = "^8.14.0"
 pyright = "^1.1.323"
 ruff = "^0.2.1"
@@ -22,20 +21,17 @@ invoke = "^2.2.0"
 ipykernel = "^6.25.1"
 
 [tool.pyright]
+ignore = ["**/*.ipynb"]
 typeCheckingMode = "basic"
 reportUnnecessaryTypeIgnoreComment = true
 
 [tool.ruff]
-exclude = ["migrations"]
 line-length = 100
 select = ["E", "F", "I", "DJ"]
 
-[tool.black]
-line-length = 100
+[tool.dagster]
+module_name = "report_etl_pipeline"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
-
-[tool.dagster]
-module_name = "report_etl_pipeline"
