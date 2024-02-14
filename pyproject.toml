@@ -12,6 +12,7 @@ dagster-webserver = "^1.6.4"
 adit-client = "^0.2.0"
 pandas = "^2.0.3"
 dagster-postgres = "^0.22.4"
+radis-client = "^0.1.0"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "^8.14.0"
