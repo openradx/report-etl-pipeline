@@ -1,4 +1,3 @@
-import os
 import re
 from datetime import datetime, timedelta
 
@@ -13,8 +12,8 @@ from pydantic import Field
 from pydicom import Dataset
 
 from .errors import FetchingError
-from .models import RadisReport, Report, ReportWithReferences
-from .resources import AditResource
+from .models import RadisReport, Report, ReportWithLinks
+from .resources import AditResource, RadisResource
 from .utils import convert_to_python_date, convert_to_python_time, extract_report_text
 
 partition_def = DailyPartitionsDefinition(start_date=datetime(2020, 1, 1))
@@ -75,23 +74,29 @@ def reports_from_adit(
             context.log.warn(f"Missing report text in study {study.StudyInstanceUID}.")
             continue
 
-        report = Report(
-            pacs_aet=config.pacs_ae_title,
-            pacs_name=config.pacs_name,
-            patient_id=instance.PatientID,
-            patient_birth_date=instance.PatientBirthDate,
-            patient_sex=instance.PatientSex,
-            study_instance_uid=instance.StudyInstanceUID,
-            accession_number=instance.AccessionNumber,
-            study_description=instance.StudyDescription,
-            study_date=instance.StudyDate,
-            study_time=instance.StudyTime,
-            modalities_in_study=modalities_in_study,
-            series_instance_uid=instance.SeriesInstanceUID,
-            sop_instance_uid=instance.SOPInstanceUID,
-            body=body,
+        patient_birth_date = convert_to_python_date(instance.PatientBirthDate)
+
+        study_date = convert_to_python_date(instance.StudyDate)
+        study_time = convert_to_python_time(instance.StudyTime)
+        study_datetime = datetime.combine(study_date, study_time)
+
+        fetched_reports.append(
+            Report(
+                pacs_aet=config.pacs_ae_title,
+                pacs_name=config.pacs_name,
+                patient_id=instance.PatientID,
+                patient_birth_date=patient_birth_date,
+                patient_sex=instance.PatientSex,
+                study_instance_uid=instance.StudyInstanceUID,
+                accession_number=instance.AccessionNumber,
+                study_description=instance.StudyDescription,
+                study_datetime=study_datetime,
+                modalities_in_study=modalities_in_study,
+                series_instance_uid=instance.SeriesInstanceUID,
+                sop_instance_uid=instance.SOPInstanceUID,
+                body=body,
+            )
         )
-        fetched_reports.append(report)
 
     num_reports = len(fetched_reports)
     num_failed = len(failed_studies)
@@ -136,38 +141,29 @@ def reports_cleaned(
 
 
 @asset(partitions_def=partition_def)
-def reports_with_references(
-    reports_cleaned: list[Report], adit: AditResource
-) -> list[ReportWithReferences]:
+def reports_with_links(reports_cleaned: list[Report], adit: AditResource) -> list[ReportWithLinks]:
     base_url = "http://thor-pacs02/Synapse/WebQuery/Index?path=/Alle%20Studien/accessionnumber="
 
-    reports_with_references: list[ReportWithReferences] = []
+    reports_with_links: list[ReportWithLinks] = []
     for report in reports_cleaned:
-        references: list[str] = []
+        links: list[str] = []
         if report.accession_number:
-            references.append(base_url + report.accession_number)
+            links.append(base_url + report.accession_number)
 
-        reports_with_references.append(
-            ReportWithReferences.model_validate({**report.model_dump(), "references": references})
+        reports_with_links.append(
+            ReportWithLinks.model_validate({**report.model_dump(), "links": links})
         )
 
-    return reports_with_references
+    return reports_with_links
 
 
 @asset(partitions_def=partition_def)
-def radis_reports(reports_with_references: list[ReportWithReferences]) -> None:
-    for report in reports_with_references:
+def radis_reports(reports_with_links: list[ReportWithLinks], radis: RadisResource) -> None:
+    for report in reports_with_links:
         document_id = f"{report.pacs_aet}_{report.accession_number}"
-        patient_birth_date = convert_to_python_date(report.patient_birth_date)
-        study_date = convert_to_python_date(report.study_date)
-        study_time = convert_to_python_time(report.study_time)
-        study_datetime = datetime.combine(study_date, study_time)
-        radis_report = RadisReport.model_validate(
-            {
-                **report.model_dump(),
-                "document_id": document_id,
-                "patient_birth_date": patient_birth_date.isoformat(),
-                "study_datetime": study_datetime.isoformat(),
-            }
+        radis_report = RadisReport(
+            document_id=document_id,
+            groups=[1],
+            **report.model_dump(),
         )
-        # TODO: Store report in RADIS
+        radis.store_report(radis_report)

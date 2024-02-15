@@ -23,6 +23,10 @@ defs = Definitions(
             host=EnvVar("ADIT_HOST"),
             auth_token=EnvVar("ADIT_AUTH_TOKEN"),
         ),
+        "radis": resources.RadisResource(
+            radis_host=EnvVar("RADIS_HOST"),
+            auth_token=EnvVar("RADIS_AUTH_TOKEN"),
+        ),
     },
     schedules=[schedule],
 )

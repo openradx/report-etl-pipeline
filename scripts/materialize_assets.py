@@ -9,7 +9,7 @@ from pathlib import Path
 from dagster import materialize
 from dotenv import load_dotenv
 
-from report_etl_pipeline.assets import reports_cleaned, reports_from_adit, reports_with_references
+from report_etl_pipeline.assets import reports_cleaned, reports_from_adit, reports_with_links
 from report_etl_pipeline.io_managers import ReportIOManager
 from report_etl_pipeline.resources import AditResource
 
@@ -21,7 +21,7 @@ token = os.environ["ADIT_AUTH_TOKEN"]
 
 def materialize_assets(partition: str, artifacts_dir: str):
     materialize(
-        [reports_from_adit, reports_cleaned, reports_with_references],
+        [reports_from_adit, reports_cleaned, reports_with_links],
         partition_key=partition,
         resources={
             "adit": AditResource(host=host, auth_token=token),

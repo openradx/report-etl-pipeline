@@ -11,7 +11,7 @@ from dagster import (
     OutputContext,
 )
 
-from .models import Report, ReportWithReferences
+from .models import Report, ReportWithLinks
 
 
 class ReportIOManager(IOManager):
@@ -19,7 +19,7 @@ class ReportIOManager(IOManager):
         makedirs(artifacts_dir, exist_ok=True)
         self.artifacts_dir = artifacts_dir
 
-    def handle_output(self, context: OutputContext, obj: list[Report | ReportWithReferences]):
+    def handle_output(self, context: OutputContext, obj: list[Report | ReportWithLinks]):
         if obj is None:
             return
 
@@ -28,14 +28,7 @@ class ReportIOManager(IOManager):
 
         records: list[dict[str, Any]] = []
         for report in obj:
-            record: dict[str, Any] = {}
-            record.update(report.dict())
-            record["modalities_in_study"] = "|".join(report.modalities_in_study)
-
-            if isinstance(report, ReportWithReferences):
-                record["references"] = "|".join(report.references)
-
-            records.append(record)
+            records.append(report.to_record())
 
         df = pd.DataFrame.from_records(records)
         filepath = Path(self.artifacts_dir) / f"reports-{context.asset_partition_key}.csv.gz"
@@ -43,7 +36,7 @@ class ReportIOManager(IOManager):
 
         context.log.info(f"Saved {len(records)} to {filepath}.")
 
-    def load_input(self, context: InputContext) -> list[Report] | list[ReportWithReferences]:
+    def load_input(self, context: InputContext) -> list[Report] | list[ReportWithLinks]:
         if not context.asset_partition_key:
             raise AssertionError("Missing partition key in IO manager")
 
@@ -51,14 +44,12 @@ class ReportIOManager(IOManager):
         df: pd.DataFrame = pd.read_csv(filepath, compression="gzip", dtype=str)
         records = df.to_dict("records")
 
-        reports: list[Report] | list[ReportWithReferences] = []
+        reports: list[Report] | list[ReportWithLinks] = []
         for record in records:
-            record["modalities_in_study"] = record["modalities_in_study"].split("|")
-            if "references" in record:
-                record["references"] = record["references"].split("|")
-                reports.append(ReportWithReferences.model_validate(record))
+            if "links" in record:
+                reports.append(ReportWithLinks.from_record(record))
             else:
-                reports.append(Report.model_validate(record))
+                reports.append(Report.from_record(record))
 
         context.log.info(f"Loaded {len(records)} records from {filepath}.")
 

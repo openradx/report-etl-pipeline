@@ -5,6 +5,8 @@ from dagster import ConfigurableResource, DagsterLogManager
 from dagster._core.execution.context.init import InitResourceContext
 from pydantic import Field, PrivateAttr
 from pydicom import Dataset
+from radis_client import RadisClient
+from requests import HTTPError
 
 from report_etl_pipeline.utils import filter_radiological_report_series
 
@@ -31,7 +33,6 @@ class AditResource(ConfigurableResource):
 
         if not context.log:
             raise ValueError("Missing log manager.")
-
         self._logger = context.log
 
         return super().setup_for_execution(context)
@@ -108,8 +109,42 @@ class RadisResource(ConfigurableResource):
     radis_host: str
     auth_token: str
 
-    # TODO: Implement this stuff
-    # _client: RadisClient = PrivateAttr()
+    _client: RadisClient = PrivateAttr()
+    _logger: DagsterLogManager = PrivateAttr()
+
+    def setup_for_execution(self, context: InitResourceContext) -> None:
+        self._client = RadisClient(server_url=self.radis_host, auth_token=self.auth_token)
+
+        if not context.log:
+            raise ValueError("Missing log manager.")
+        self._logger = context.log
+
+        return super().setup_for_execution(context)
 
     def store_report(self, report: RadisReport) -> None:
-        pass
+        try:
+            self._client.add_report(
+                {
+                    "document_id": report.document_id,
+                    "groups": report.groups,
+                    "pacs_aet": report.pacs_aet,
+                    "pacs_name": report.pacs_name,
+                    "patient_id": report.patient_id,
+                    "patient_birth_date": report.patient_birth_date,
+                    "patient_sex": report.patient_sex,
+                    "study_instance_uid": report.study_instance_uid,
+                    "accession_number": report.accession_number,
+                    "study_description": report.study_description,
+                    "study_datetime": report.study_datetime,
+                    "modalities_in_study": report.modalities_in_study,
+                    "series_instance_uid": report.series_instance_uid,
+                    "sop_instance_uid": report.sop_instance_uid,
+                    "links": report.links,
+                    "body": report.body,
+                }
+            )
+        except HTTPError as err:
+            self._logger.error(
+                f"Failed to store report {report.document_id}: {err.response.json()}"
+            )
+            raise err
