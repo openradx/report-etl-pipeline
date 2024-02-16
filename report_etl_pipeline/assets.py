@@ -12,7 +12,7 @@ from pydantic import Field
 from pydicom import Dataset
 
 from .errors import FetchingError
-from .models import RadisReport, Report, ReportWithLinks
+from .models import OriginalReport, SanitizedReport
 from .resources import AditResource, RadisResource
 from .utils import convert_to_python_date, convert_to_python_time, extract_report_text
 
@@ -35,9 +35,9 @@ class PacsConfig(Config):
 
 
 @asset(partitions_def=partition_def)
-def reports_from_adit(
+def adit_reports(
     context: AssetExecutionContext, config: PacsConfig, adit: AditResource
-) -> list[Report]:
+) -> list[OriginalReport]:
     context.log.info(f"Fetching reports from ADIT for partition {context.partition_key}.")
 
     time_window = context.partition_time_window
@@ -47,7 +47,7 @@ def reports_from_adit(
     studies = adit.fetch_studies_with_sr(config.pacs_ae_title, start, end)
     context.log.info(f"{len(studies)} studies found to extract reports from.")
 
-    fetched_reports: list[Report] = []
+    adit_reports: list[OriginalReport] = []
     failed_studies: list[Dataset] = []
     for study in studies:
         try:
@@ -69,8 +69,8 @@ def reports_from_adit(
         # converted to a list
         modalities_in_study = list(study.ModalitiesInStudy)
 
-        body = extract_report_text(instance)
-        if not body:
+        body_original = extract_report_text(instance)
+        if not body_original:
             context.log.warn(f"Missing report text in study {study.StudyInstanceUID}.")
             continue
 
@@ -80,8 +80,8 @@ def reports_from_adit(
         study_time = convert_to_python_time(instance.StudyTime)
         study_datetime = datetime.combine(study_date, study_time)
 
-        fetched_reports.append(
-            Report(
+        adit_reports.append(
+            OriginalReport(
                 pacs_aet=config.pacs_ae_title,
                 pacs_name=config.pacs_name,
                 patient_id=instance.PatientID,
@@ -94,11 +94,11 @@ def reports_from_adit(
                 modalities_in_study=modalities_in_study,
                 series_instance_uid=instance.SeriesInstanceUID,
                 sop_instance_uid=instance.SOPInstanceUID,
-                body=body,
+                body_original=body_original,
             )
         )
 
-    num_reports = len(fetched_reports)
+    num_reports = len(adit_reports)
     num_failed = len(failed_studies)
 
     if num_reports == 0 and len(failed_studies) > 0:
@@ -116,54 +116,74 @@ def reports_from_adit(
         }
     )
 
-    return fetched_reports
+    return adit_reports
+
+
+class SanitizeConfig(Config):
+    language: str = Field(
+        default=EnvVar("REPORT_LANGUAGE"),
+        description="The language of the reports.",
+    )
+    group: int = Field(
+        default=EnvVar("GROUP_ID"),
+        description="The group ID to assign to the reports.",
+    )
 
 
 @asset(partitions_def=partition_def)
-def reports_cleaned(
-    context: AssetExecutionContext, reports_from_adit: list[Report]
-) -> list[Report]:
-    context.log.info("Cleanup fetched reports.")
+def sanitized_reports(
+    context: AssetExecutionContext,
+    config: SanitizeConfig,
+    adit_reports: list[OriginalReport],
+) -> list[SanitizedReport]:
+    context.log.info(f"Sanitize {len(adit_reports)} reports.")
 
     befunder_pattern = re.compile(r"Befunder:.*")
     newline_pattern = re.compile(r"<br>")
-    reports = reports_from_adit
-    for report in reports:
-        body = report.body
-        body = befunder_pattern.sub("", body)
-        body = newline_pattern.sub("\n", body)
-        body = body.strip()
-        report.body = body
 
-    context.log.info("Cleanup finished.")
+    link_base_url = (
+        "http://thor-pacs02/Synapse/WebQuery/Index?path=/Alle%20Studien/accessionnumber="
+    )
 
-    return reports
+    sanitized_reports: list[SanitizedReport] = []
 
-
-@asset(partitions_def=partition_def)
-def reports_with_links(reports_cleaned: list[Report], adit: AditResource) -> list[ReportWithLinks]:
-    base_url = "http://thor-pacs02/Synapse/WebQuery/Index?path=/Alle%20Studien/accessionnumber="
-
-    reports_with_links: list[ReportWithLinks] = []
-    for report in reports_cleaned:
-        links: list[str] = []
-        if report.accession_number:
-            links.append(base_url + report.accession_number)
-
-        reports_with_links.append(
-            ReportWithLinks.model_validate({**report.model_dump(), "links": links})
-        )
-
-    return reports_with_links
-
-
-@asset(partitions_def=partition_def)
-def radis_reports(reports_with_links: list[ReportWithLinks], radis: RadisResource) -> None:
-    for report in reports_with_links:
+    for report in adit_reports:
+        # Create a document ID from the PACS AE title and the accession number
         document_id = f"{report.pacs_aet}_{report.accession_number}"
-        radis_report = RadisReport(
-            document_id=document_id,
-            groups=[1],
+
+        # Sanitize the report body
+        body_sanitized = report.body_original
+        body_sanitized = befunder_pattern.sub("", body_sanitized)
+        body_sanitized = newline_pattern.sub("\n", body_sanitized)
+        body_sanitized = body_sanitized.strip()
+
+        # Create a link if the report has an accession number
+        links = []
+        if report.accession_number:
+            links.append(link_base_url + report.accession_number)
+
+        report_data = {
             **report.model_dump(),
-        )
-        radis.store_report(radis_report)
+            "document_id": document_id,
+            "language": config.language,
+            "groups": [config.group],
+            "links": links,
+            "body_sanitized": body_sanitized,
+        }
+        sanitized_reports.append(SanitizedReport(**report_data))
+
+    context.log.info("Sanitization finished.")
+
+    return sanitized_reports
+
+
+@asset(partitions_def=partition_def)
+def radis_reports(
+    context: AssetExecutionContext, sanitized_reports: list[SanitizedReport], radis: RadisResource
+) -> None:
+    context.log.info(f"Uploading {len(sanitized_reports)} reports to RADIS.")
+
+    for report in sanitized_reports:
+        radis.store_report(report)
+
+    context.log.info("Upload finished.")

@@ -11,7 +11,7 @@ from dagster import (
     OutputContext,
 )
 
-from .models import Report, ReportWithLinks
+from .models import OriginalReport, SanitizedReport
 
 
 class ReportIOManager(IOManager):
@@ -19,7 +19,7 @@ class ReportIOManager(IOManager):
         makedirs(artifacts_dir, exist_ok=True)
         self.artifacts_dir = artifacts_dir
 
-    def handle_output(self, context: OutputContext, obj: list[Report | ReportWithLinks]):
+    def handle_output(self, context: OutputContext, obj: list[OriginalReport | SanitizedReport]):
         if obj is None:
             return
 
@@ -36,7 +36,7 @@ class ReportIOManager(IOManager):
 
         context.log.info(f"Saved {len(records)} to {filepath}.")
 
-    def load_input(self, context: InputContext) -> list[Report] | list[ReportWithLinks]:
+    def load_input(self, context: InputContext) -> list[OriginalReport] | list[SanitizedReport]:
         if not context.asset_partition_key:
             raise AssertionError("Missing partition key in IO manager")
 
@@ -44,12 +44,12 @@ class ReportIOManager(IOManager):
         df: pd.DataFrame = pd.read_csv(filepath, compression="gzip", dtype=str)
         records = df.to_dict("records")
 
-        reports: list[Report] | list[ReportWithLinks] = []
+        reports: list[OriginalReport] | list[SanitizedReport] = []
         for record in records:
-            if "links" in record:
-                reports.append(ReportWithLinks.from_record(record))
+            if "document_id" in record:
+                reports.append(SanitizedReport.from_record(record))
             else:
-                reports.append(Report.from_record(record))
+                reports.append(OriginalReport.from_record(record))
 
         context.log.info(f"Loaded {len(records)} records from {filepath}.")
 

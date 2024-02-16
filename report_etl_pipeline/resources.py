@@ -10,7 +10,7 @@ from requests import HTTPError
 
 from report_etl_pipeline.utils import filter_radiological_report_series
 
-from .models import RadisReport
+from .models import SanitizedReport
 
 
 class AditResource(ConfigurableResource):
@@ -74,7 +74,7 @@ class AditResource(ConfigurableResource):
         return results
 
     def fetch_report_dataset(self, ae_title: str, study_instance_uid: str) -> Dataset | None:
-        self._logger.debug(f"Processing study {study_instance_uid}.")
+        self._logger.debug(f"Fetching report of study {study_instance_uid}.")
 
         series_list = self._client.search_for_series(
             ae_title, study_instance_uid, {"Modality": "SR"}
@@ -121,11 +121,16 @@ class RadisResource(ConfigurableResource):
 
         return super().setup_for_execution(context)
 
-    def store_report(self, report: RadisReport) -> None:
+    def store_report(self, report: SanitizedReport) -> None:
+        document_id = report.document_id
+        self._logger.debug(f"Storing report with document ID {document_id}.")
+
         try:
-            self._client.add_report(
+            self._client.update_report(
+                document_id,
                 {
-                    "document_id": report.document_id,
+                    "document_id": document_id,
+                    "language": report.language,
                     "groups": report.groups,
                     "pacs_aet": report.pacs_aet,
                     "pacs_name": report.pacs_name,
@@ -140,8 +145,9 @@ class RadisResource(ConfigurableResource):
                     "series_instance_uid": report.series_instance_uid,
                     "sop_instance_uid": report.sop_instance_uid,
                     "links": report.links,
-                    "body": report.body,
-                }
+                    "body": report.body_sanitized,
+                },
+                upsert=True,
             )
         except HTTPError as err:
             self._logger.error(

@@ -4,7 +4,7 @@ from typing import Literal
 from pydantic import BaseModel, field_serializer
 
 
-class Report(BaseModel):
+class OriginalReport(BaseModel):
     pacs_aet: str
     pacs_name: str
     patient_id: str
@@ -17,7 +17,7 @@ class Report(BaseModel):
     modalities_in_study: list[str]
     series_instance_uid: str
     sop_instance_uid: str
-    body: str
+    body_original: str
 
     @field_serializer("patient_birth_date")
     def serialize_patient_birth_date(self, patient_birth_date: date):
@@ -38,21 +38,22 @@ class Report(BaseModel):
         return cls.model_validate(record)
 
 
-class ReportWithLinks(Report):
+class SanitizedReport(OriginalReport):
+    document_id: str
+    language: str
+    groups: list[int]
     links: list[str]
+    body_sanitized: str
 
     def to_record(self):
         record = super().to_record()
+        record["groups"] = "|".join(map(str, self.groups))
         record["links"] = "|".join(self.links)
         return record
 
     @classmethod
     def from_record(cls, record):
         record["modalities_in_study"] = record["modalities_in_study"].split("|")
+        record["groups"] = list(map(int, record["groups"].split("|")))
         record["links"] = record["links"].split("|")
         return cls.model_validate(record)
-
-
-class RadisReport(ReportWithLinks):
-    document_id: str
-    groups: list[int]
