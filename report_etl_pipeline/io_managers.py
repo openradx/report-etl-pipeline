@@ -13,13 +13,15 @@ from dagster import (
 
 from .models import OriginalReport, SanitizedReport
 
+Report = OriginalReport | SanitizedReport
+
 
 class ReportIOManager(IOManager):
     def __init__(self, artifacts_dir: str):
         makedirs(artifacts_dir, exist_ok=True)
         self.artifacts_dir = artifacts_dir
 
-    def handle_output(self, context: OutputContext, obj: list[OriginalReport | SanitizedReport]):
+    def handle_output(self, context: OutputContext, obj: list[Report]):
         if obj is None:
             return
 
@@ -36,7 +38,16 @@ class ReportIOManager(IOManager):
 
         context.log.info(f"Saved {len(records)} to {filepath}.")
 
-    def load_input(self, context: InputContext) -> list[OriginalReport] | list[SanitizedReport]:
+    def load_input(self, context: InputContext) -> list[Report]:
+        assert context.metadata
+        data_type = context.metadata["data_type"]
+        if data_type == SanitizedReport.__name__:
+            data_class = SanitizedReport
+        elif data_type == OriginalReport.__name__:
+            data_class = OriginalReport
+        else:
+            raise AssertionError(f"Unknown data type: {data_type}")
+
         if not context.asset_partition_key:
             raise AssertionError("Missing partition key in IO manager")
 
@@ -44,12 +55,9 @@ class ReportIOManager(IOManager):
         df: pd.DataFrame = pd.read_csv(filepath, compression="gzip", dtype=str)
         records = df.to_dict("records")
 
-        reports: list[OriginalReport] | list[SanitizedReport] = []
+        reports: list[Report] = []
         for record in records:
-            if "document_id" in record:
-                reports.append(SanitizedReport.from_record(record))
-            else:
-                reports.append(OriginalReport.from_record(record))
+            reports.append(data_class.from_record(record))
 
         context.log.info(f"Loaded {len(records)} records from {filepath}.")
 

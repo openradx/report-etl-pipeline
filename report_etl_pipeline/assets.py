@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 
 from dagster import (
     AssetExecutionContext,
+    AssetIn,
     Config,
     DailyPartitionsDefinition,
     EnvVar,
@@ -130,7 +131,10 @@ class SanitizeConfig(Config):
     )
 
 
-@asset(partitions_def=partition_def)
+@asset(
+    partitions_def=partition_def,
+    ins={"adit_reports": AssetIn(metadata={"data_type": OriginalReport.__name__})},
+)
 def sanitized_reports(
     context: AssetExecutionContext,
     config: SanitizeConfig,
@@ -148,6 +152,8 @@ def sanitized_reports(
     sanitized_reports: list[SanitizedReport] = []
 
     for report in adit_reports:
+        # TODO: fail without accession number
+
         # Create a document ID from the PACS AE title and the accession number
         document_id = f"{report.pacs_aet}_{report.accession_number}"
 
@@ -177,7 +183,10 @@ def sanitized_reports(
     return sanitized_reports
 
 
-@asset(partitions_def=partition_def)
+@asset(
+    partitions_def=partition_def,
+    ins={"sanitized_reports": AssetIn(metadata={"data_type": SanitizedReport.__name__})},
+)
 def radis_reports(
     context: AssetExecutionContext, sanitized_reports: list[SanitizedReport], radis: RadisResource
 ) -> None:
