@@ -38,12 +38,16 @@ def dagster_dev(ctx: Context):
 @task
 def compose_up(
     ctx: Context,
+    port: int,
     no_build: bool = False,
 ):
     """Start Dagster container (production environment)"""
     build_opt = "--no-build" if no_build else "--build"
-    cmd = f"docker compose -f docker.compose.yaml up {build_opt} --detach"
-    run_cmd(ctx, cmd)
+    cmd: list[str] = []
+    if port:
+        cmd.append(f"export DAGSTER_NGINX_PORT={port} && ")
+    cmd.append(f"docker compose -f docker.compose.yaml up {build_opt} --detach")
+    run_cmd(ctx, " ".join(cmd))
 
 
 @task
