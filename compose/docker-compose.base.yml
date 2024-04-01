@@ -1,0 +1,20 @@
+version: "3.8"
+
+services:
+  dagster:
+    build:
+      context: ..
+    depends_on:
+      - postgres
+    environment:
+      DAGSTER_HOME: "/opt/dagster/dagster_home"
+    command: >
+      bash -c "./scripts/start_server.sh"
+
+  postgres:
+    image: postgres:16.1
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

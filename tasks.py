@@ -1,12 +1,45 @@
 from pathlib import Path
+from typing import Literal
 
 from invoke.context import Context
 from invoke.runners import Result
 from invoke.tasks import task
 
+Environments = Literal["dev", "prod"]
+
+stack_name_dev = "report_etl_pipeline_dev"
+stack_name_prod = "report_etl_pipeline_prod"
+
+project_dir = Path(__file__).resolve().parent
+compose_dir = project_dir / "compose"
+
+compose_file_base = compose_dir / "docker-compose.base.yml"
+compose_file_dev = compose_dir / "docker-compose.dev.yml"
+compose_file_prod = compose_dir / "docker-compose.prod.yml"
+
 ###
 # Helper functions
 ###
+
+
+def get_stack_name(env: Environments):
+    if env == "dev":
+        return stack_name_dev
+    elif env == "prod":
+        return stack_name_prod
+    else:
+        raise ValueError(f"Unknown environment: {env}")
+
+
+def build_compose_cmd(env: Environments):
+    base_compose_cmd = f"docker compose -f '{compose_file_base}'"
+    stack_name = get_stack_name(env)
+    if env == "dev":
+        return f"{base_compose_cmd} -f '{compose_file_dev}' -p {stack_name}"
+    elif env == "prod":
+        return f"{base_compose_cmd} -f '{compose_file_prod}' -p {stack_name}"
+    else:
+        raise ValueError(f"Unknown environment: {env}")
 
 
 def run_cmd(ctx: Context, cmd: str, silent=False) -> Result:
@@ -26,37 +59,35 @@ def run_cmd(ctx: Context, cmd: str, silent=False) -> Result:
 
 
 @task
-def dagster_dev(ctx: Context):
-    """Start Dagster for development"""
-    if not Path("./.env").is_file():
-        raise ValueError("Missing .env file for development")
-
-    dagster_home = Path(__file__).parent.absolute() / "dagster_home"
-    run_cmd(ctx, f"export DAGSTER_HOME={dagster_home} && dagster dev")
-
-
-@task
 def compose_up(
     ctx: Context,
-    port: int,
+    env: Environments = "dev",
+    port: int = 8000,
     no_build: bool = False,
 ):
-    """Start Dagster container (production environment)"""
+    """Start pipeline in specified environment"""
     build_opt = "--no-build" if no_build else "--build"
     cmd: list[str] = []
     if port:
-        cmd.append(f"export DAGSTER_NGINX_PORT={port} && ")
-    cmd.append(f"docker compose -f docker.compose.yaml up {build_opt} --detach")
+        if env == "dev":
+            cmd.append(f"export DAGSTER_DEV_PORT={port} && ")
+        elif env == "prod":
+            cmd.append(f"export DAGSTER_NGINX_PORT={port} && ")
+        else:
+            raise ValueError(f"Unknown environment: {env}")
+
+    cmd.append(f"{build_compose_cmd(env)} up {build_opt} --detach")
     run_cmd(ctx, " ".join(cmd))
 
 
 @task
 def compose_down(
     ctx: Context,
+    env: Environments = "dev",
     cleanup: bool = False,
 ):
-    """Stop Dagster container (production environment)"""
-    cmd = "docker compose -f docker.compose.yaml down"
+    """Stop pipeline in specified environment"""
+    cmd = f"{build_compose_cmd(env)} down"
     if cleanup:
         cmd += " --remove-orphans --volumes"
     run_cmd(ctx, cmd)

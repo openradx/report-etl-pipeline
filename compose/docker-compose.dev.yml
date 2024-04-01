@@ -1,0 +1,18 @@
+version: "3.8"
+
+services:
+  dagster:
+    build:
+      target: development
+    image: report_etl_pipeline_dev:latest
+    ports:
+      - "${DAGSTER_DEV_PORT:-3000}:3000"
+    env_file:
+      - ../.env.dev
+    volumes:
+      - ../dagster_home_dev:/opt/dagster/dagster_home
+      - ..:/opt/dagster/app
+
+  postgres:
+    env_file:
+      - ../.env.dev

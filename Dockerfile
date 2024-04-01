@@ -25,7 +25,12 @@ ENV PYTHONUNBUFFERED=1 \
     # paths
     # this is where our requirements + virtual environment will live
     PYSETUP_PATH="/opt/pysetup" \
-    VENV_PATH="/opt/pysetup/.venv"
+    VENV_PATH="/opt/pysetup/.venv" \
+    \
+    # dagster
+    # where our code is stored
+    DAGSTER_APP=/opt/dagster/app/
+
 
 # prepend poetry and venv to path
 ENV PATH="$POETRY_HOME/bin:$VENV_PATH/bin:$PATH"
@@ -51,18 +56,26 @@ COPY poetry.lock pyproject.toml ./
 RUN poetry install --without dev
 
 
+# `development` image is used during development / testing
+FROM python-base as development
+WORKDIR $PYSETUP_PATH
+
+# copy in our built poetry + venv
+COPY --from=builder-base $POETRY_HOME $POETRY_HOME
+COPY --from=builder-base $PYSETUP_PATH $PYSETUP_PATH
+
+# quicker install as runtime deps are already installed
+RUN poetry install
+
+# will become mountpoint of our code
+WORKDIR $DAGSTER_APP
+
+
 # `production` image used for runtime
 FROM python-base as production
 COPY --from=builder-base $PYSETUP_PATH $PYSETUP_PATH
 
-RUN mkdir -p /opt/dagster/dagster_home /opt/dagster/app
+# Copy our code into the image
+COPY . $DAGSTER_APP
 
-# Copy your code and workspace to /opt/dagster/app
-COPY ./report_etl_pipeline /opt/dagster/app/report_etl_pipeline
-
-ENV DAGSTER_HOME=/opt/dagster/dagster_home/
-
-# Copy dagster instance YAML to $DAGSTER_HOME
-COPY ./dagster.prod.yaml /opt/dagster/dagster_home/dagster.yaml
-
-WORKDIR /opt/dagster/app
+WORKDIR $DAGSTER_APP
