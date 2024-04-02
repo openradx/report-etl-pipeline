@@ -10,9 +10,9 @@ python = ">=3.11,<3.13"
 dagster = "^1.6.11"
 dagster-postgres = "^0.22.11"
 dagster-webserver = "^1.6.11"
-adit-client = "^0.2.0"
+adit-client = "*"
 pandas = "^2.0.3"
-radis-client = "^0.3.3"
+radis-client = "*"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "^8.14.0"
