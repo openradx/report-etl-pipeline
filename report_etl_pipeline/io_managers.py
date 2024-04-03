@@ -71,10 +71,14 @@ class ReportIOManagerFactory(ConfigurableIOManagerFactory):
         if not context.instance:
             raise AssertionError("Missing instance in IO manager factory")
 
-        if self.artifacts_dir is not None:
-            artifacts_dir = Path(self.artifacts_dir).absolute().as_posix()
-        else:
+        artifacts_dir = self.artifacts_dir
+        if not self.artifacts_dir:
             artifacts_dir = context.instance.storage_directory()
-        Path(artifacts_dir).mkdir(parents=True, exist_ok=True)
 
-        return ReportIOManager(artifacts_dir)
+        artifacts_path = Path(artifacts_dir)
+        if not artifacts_path.is_absolute():
+            artifacts_path = Path(context.instance.root_directory) / artifacts_path
+
+        artifacts_path.mkdir(parents=True, exist_ok=True)
+
+        return ReportIOManager(artifacts_path.as_posix())
