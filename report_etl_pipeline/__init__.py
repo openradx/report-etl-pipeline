@@ -18,7 +18,9 @@ defs = Definitions(
     assets=all_assets,
     jobs=[all_assets_job],
     resources={
-        "io_manager": io_managers.ReportIOManagerFactory(artifacts_dir=EnvVar("ARTIFACTS_DIR")),
+        "io_manager": io_managers.ReportIOManagerFactory(
+            artifacts_dir=EnvVar("ARTIFACTS_DIR"),
+        ),
         "adit": resources.AditResource(
             host=EnvVar("ADIT_HOST"),
             auth_token=EnvVar("ADIT_AUTH_TOKEN"),

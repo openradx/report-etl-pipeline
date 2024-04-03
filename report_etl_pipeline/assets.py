@@ -17,7 +17,7 @@ from .models import OriginalReport, SanitizedReport
 from .resources import AditResource, RadisResource
 from .utils import convert_to_python_date, convert_to_python_time, extract_report_text
 
-partition_def = DailyPartitionsDefinition(start_date=datetime(2020, 1, 1))
+partition_def = DailyPartitionsDefinition(start_date=datetime(2012, 1, 1))
 
 
 class PacsConfig(Config):
