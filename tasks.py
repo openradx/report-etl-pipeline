@@ -1,8 +1,8 @@
+import os
 from pathlib import Path
 from typing import Literal
 
 from invoke.context import Context
-from invoke.runners import Result
 from invoke.tasks import task
 
 Environments = Literal["dev", "prod"]
@@ -42,17 +42,6 @@ def build_compose_cmd(env: Environments):
         raise ValueError(f"Unknown environment: {env}")
 
 
-def run_cmd(ctx: Context, cmd: str, silent=False) -> Result:
-    if not silent:
-        print(f"Running: {cmd}")
-
-    hide = True if silent else None
-
-    result = ctx.run(cmd, pty=True, hide=hide)
-    assert result and result.ok
-    return result
-
-
 ###
 # Tasks
 ###
@@ -77,7 +66,7 @@ def compose_up(
             raise ValueError(f"Unknown environment: {env}")
 
     cmd.append(f"{build_compose_cmd(env)} up {build_opt} --detach")
-    run_cmd(ctx, " ".join(cmd))
+    ctx.run(" ".join(cmd), pty=True, env={"UID": str(os.getuid()), "GID": str(os.getgid())})
 
 
 @task
@@ -90,7 +79,7 @@ def compose_down(
     cmd = f"{build_compose_cmd(env)} down"
     if cleanup:
         cmd += " --remove-orphans --volumes"
-    run_cmd(ctx, cmd)
+    ctx.run(cmd, pty=True, env={"UID": str(os.getuid()), "GID": str(os.getgid())})
 
 
 @task
