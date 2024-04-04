@@ -1,8 +1,8 @@
+import gzip
+import json
 from os import makedirs
 from pathlib import Path
-from typing import Any
 
-import pandas as pd
 from dagster import (
     ConfigurableIOManagerFactory,
     InitResourceContext,
@@ -11,9 +11,9 @@ from dagster import (
     OutputContext,
 )
 
-from .models import OriginalReport, SanitizedReport
+from .models import AditReport, SanitizedReport
 
-Report = OriginalReport | SanitizedReport
+Report = AditReport | SanitizedReport
 
 
 class ReportIOManager(IOManager):
@@ -21,47 +21,38 @@ class ReportIOManager(IOManager):
         makedirs(artifacts_dir, exist_ok=True)
         self.artifacts_dir = artifacts_dir
 
-    def handle_output(self, context: OutputContext, obj: list[Report]):
+    def handle_output(self, context: OutputContext, obj: list[dict]):
         if obj is None:
             return
 
         if not context.asset_partition_key:
             raise AssertionError("Missing partition key in IO manager")
 
-        records: list[dict[str, Any]] = []
-        for report in obj:
-            records.append(report.to_record())
+        filepath = Path(self.artifacts_dir) / f"reports-{context.asset_partition_key}.json.gz"
 
-        df = pd.DataFrame.from_records(records)
-        filepath = Path(self.artifacts_dir) / f"reports-{context.asset_partition_key}.csv.gz"
-        df.to_csv(filepath, compression="gzip")
+        json_str = json.dumps(obj)
+        json_bytes = json_str.encode("utf-8")
 
-        context.log.info(f"Saved {len(records)} to {filepath}.")
+        with gzip.open(filepath, "w") as fout:
+            fout.write(json_bytes)
+
+        context.log.info(f"Saved {len(obj)} to {filepath}.")
 
     def load_input(self, context: InputContext) -> list[Report]:
-        assert context.metadata
-        data_type = context.metadata["data_type"]
-        if data_type == SanitizedReport.__name__:
-            data_class = SanitizedReport
-        elif data_type == OriginalReport.__name__:
-            data_class = OriginalReport
-        else:
-            raise AssertionError(f"Unknown data type: {data_type}")
-
         if not context.asset_partition_key:
             raise AssertionError("Missing partition key in IO manager")
 
-        filepath = Path(self.artifacts_dir) / f"reports-{context.asset_partition_key}.csv.gz"
-        df: pd.DataFrame = pd.read_csv(filepath, compression="gzip", dtype=str)
-        records = df.to_dict("records")
+        filepath = Path(self.artifacts_dir) / f"reports-{context.asset_partition_key}.json.gz"
 
-        reports: list[Report] = []
-        for record in records:
-            reports.append(data_class.from_record(record))
+        with gzip.open(filepath, "r") as fin:
+            json_bytes = fin.read()
+
+        json_str = json_bytes.decode("utf-8")
+        records = json.loads(json_str)
 
         context.log.info(f"Loaded {len(records)} records from {filepath}.")
 
-        return reports
+        return records
 
 
 class ReportIOManagerFactory(ConfigurableIOManagerFactory):

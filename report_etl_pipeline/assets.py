@@ -3,7 +3,6 @@ from datetime import datetime, timedelta
 
 from dagster import (
     AssetExecutionContext,
-    AssetIn,
     Config,
     DailyPartitionsDefinition,
     EnvVar,
@@ -13,7 +12,7 @@ from pydantic import Field
 from pydicom import Dataset
 
 from .errors import FetchingError
-from .models import OriginalReport, SanitizedReport
+from .models import AditReport, SanitizedReport
 from .resources import AditResource, RadisResource
 from .utils import convert_to_python_date, convert_to_python_time, extract_report_text
 
@@ -38,7 +37,7 @@ class PacsConfig(Config):
 @asset(partitions_def=partition_def)
 def adit_reports(
     context: AssetExecutionContext, config: PacsConfig, adit: AditResource
-) -> list[OriginalReport]:
+) -> list[dict]:
     context.log.info(f"Fetching reports from ADIT for partition {context.partition_key}.")
 
     time_window = context.partition_time_window
@@ -48,7 +47,7 @@ def adit_reports(
     studies = adit.fetch_studies_with_sr(config.pacs_ae_title, start, end)
     context.log.info(f"{len(studies)} studies found to extract reports from.")
 
-    adit_reports: list[OriginalReport] = []
+    reports: list[AditReport] = []
     failed_studies: list[Dataset] = []
     for study in studies:
         try:
@@ -81,8 +80,8 @@ def adit_reports(
         study_time = convert_to_python_time(instance.StudyTime)
         study_datetime = datetime.combine(study_date, study_time)
 
-        adit_reports.append(
-            OriginalReport(
+        reports.append(
+            AditReport(
                 pacs_aet=config.pacs_ae_title,
                 pacs_name=config.pacs_name,
                 patient_id=instance.PatientID,
@@ -99,7 +98,7 @@ def adit_reports(
             )
         )
 
-    num_reports = len(adit_reports)
+    num_reports = len(reports)
     num_failed = len(failed_studies)
 
     if num_reports == 0 and len(failed_studies) > 0:
@@ -117,7 +116,7 @@ def adit_reports(
         }
     )
 
-    return adit_reports
+    return [report.model_dump() for report in reports]
 
 
 class SanitizeConfig(Config):
@@ -131,16 +130,15 @@ class SanitizeConfig(Config):
     )
 
 
-@asset(
-    partitions_def=partition_def,
-    ins={"adit_reports": AssetIn(metadata={"data_type": OriginalReport.__name__})},
-)
+@asset(partitions_def=partition_def)
 def sanitized_reports(
     context: AssetExecutionContext,
     config: SanitizeConfig,
-    adit_reports: list[OriginalReport],
-) -> list[SanitizedReport]:
+    adit_reports: list[dict],
+) -> list[dict]:
     context.log.info(f"Sanitize {len(adit_reports)} reports.")
+
+    reports = [AditReport.model_validate(report) for report in adit_reports]
 
     befunder_pattern = re.compile(r"Befunder:.*")
     newline_pattern = re.compile(r"<br>")
@@ -150,8 +148,7 @@ def sanitized_reports(
     )
 
     sanitized_reports: list[SanitizedReport] = []
-
-    for report in adit_reports:
+    for report in reports:
         # TODO: fail without accession number
 
         # Create a document ID from the PACS AE title and the accession number
@@ -180,19 +177,18 @@ def sanitized_reports(
 
     context.log.info("Sanitization finished.")
 
-    return sanitized_reports
+    return [report.model_dump() for report in sanitized_reports]
 
 
-@asset(
-    partitions_def=partition_def,
-    ins={"sanitized_reports": AssetIn(metadata={"data_type": SanitizedReport.__name__})},
-)
+@asset(partitions_def=partition_def)
 def radis_reports(
-    context: AssetExecutionContext, sanitized_reports: list[SanitizedReport], radis: RadisResource
+    context: AssetExecutionContext, sanitized_reports: list[dict], radis: RadisResource
 ) -> None:
     context.log.info(f"Uploading {len(sanitized_reports)} reports to RADIS.")
 
-    for report in sanitized_reports:
+    reports = [SanitizedReport.model_validate(report) for report in sanitized_reports]
+
+    for report in reports:
         radis.store_report(report)
 
     context.log.info("Upload finished.")

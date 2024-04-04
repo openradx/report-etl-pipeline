@@ -35,8 +35,6 @@ class AditResource(ConfigurableResource):
             raise ValueError("Missing log manager.")
         self._logger = context.log
 
-        return super().setup_for_execution(context)
-
     def fetch_studies_with_sr(self, ae_title: str, start: datetime, end: datetime) -> list[Dataset]:
         start_date = start.strftime("%Y%m%d")
         end_date = end.strftime("%Y%m%d")
@@ -118,8 +116,6 @@ class RadisResource(ConfigurableResource):
         if not context.log:
             raise ValueError("Missing log manager.")
         self._logger = context.log
-
-        return super().setup_for_execution(context)
 
     def store_report(self, report: SanitizedReport) -> None:
         document_id = report.document_id
