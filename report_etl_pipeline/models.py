@@ -18,6 +18,7 @@ class AditReport(BaseModel):
     series_instance_uid: str
     sop_instance_uid: str
     body_original: str
+    created: datetime
 
     @field_validator("patient_birth_date")
     @classmethod

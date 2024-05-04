@@ -51,10 +51,16 @@ def build_compose_cmd(env: Environments):
 def compose_up(
     ctx: Context,
     env: Environments = "dev",
-    port: int = 8000,
+    port: int = 3000,
     no_build: bool = False,
 ):
-    """Start pipeline in specified environment"""
+    """Start Dagster pipeline
+
+    Args:
+        env (Environments, optional): Environment to use. Defaults to "dev".
+        port (int, optional): Port to access the web UI. Defaults to 3000.
+        no_build (bool, optional): Skip build step. Defaults to False.
+    """
     build_opt = "--no-build" if no_build else "--build"
     cmd: list[str] = []
     if port:
@@ -75,7 +81,7 @@ def compose_down(
     env: Environments = "dev",
     cleanup: bool = False,
 ):
-    """Stop pipeline in specified environment"""
+    """Stop Dagster pipeline"""
     cmd = f"{build_compose_cmd(env)} down"
     if cleanup:
         cmd += " --remove-orphans --volumes"

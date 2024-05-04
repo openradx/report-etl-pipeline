@@ -1,10 +1,9 @@
 import re
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from dagster import (
     AssetExecutionContext,
     Config,
-    DailyPartitionsDefinition,
     EnvVar,
     asset,
 )
@@ -13,10 +12,9 @@ from pydicom import Dataset
 
 from .errors import FetchingError
 from .models import AditReport, SanitizedReport
+from .partitions import collect_report_partitions_def
 from .resources import AditResource, RadisResource
 from .utils import convert_to_python_date, convert_to_python_time, extract_report_text
-
-partition_def = DailyPartitionsDefinition(start_date=datetime(2012, 1, 1))
 
 
 class PacsConfig(Config):
@@ -34,7 +32,7 @@ class PacsConfig(Config):
     )
 
 
-@asset(partitions_def=partition_def)
+@asset(partitions_def=collect_report_partitions_def)
 def adit_reports(
     context: AssetExecutionContext, config: PacsConfig, adit: AditResource
 ) -> list[dict]:
@@ -95,6 +93,7 @@ def adit_reports(
                 series_instance_uid=instance.SeriesInstanceUID,
                 sop_instance_uid=instance.SOPInstanceUID,
                 body_original=body_original,
+                created=datetime.now(timezone.utc),
             )
         )
 
@@ -130,7 +129,7 @@ class SanitizeConfig(Config):
     )
 
 
-@asset(partitions_def=partition_def)
+@asset(partitions_def=collect_report_partitions_def)
 def sanitized_reports(
     context: AssetExecutionContext,
     config: SanitizeConfig,
@@ -180,7 +179,7 @@ def sanitized_reports(
     return [report.model_dump() for report in sanitized_reports]
 
 
-@asset(partitions_def=partition_def)
+@asset(partitions_def=collect_report_partitions_def)
 def radis_reports(
     context: AssetExecutionContext, sanitized_reports: list[dict], radis: RadisResource
 ) -> None:

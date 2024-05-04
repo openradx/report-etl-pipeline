@@ -6,17 +6,20 @@ from dagster import (
     load_assets_from_modules,
 )
 
-from . import assets, io_managers, resources
+from . import assets, io_managers, partitions, resources
 
 all_assets = load_assets_from_modules([assets])
 
-all_assets_job = define_asset_job(name="all_assets_job")
+collect_reports_job = define_asset_job(
+    name="collect_reports_job", partitions_def=partitions.collect_report_partitions_def
+)
 
-schedule = build_schedule_from_partitioned_job(all_assets_job, hour_of_day=1)
+# Schedule every day at 3 AM (UTC)
+collect_reports_schedule = build_schedule_from_partitioned_job(collect_reports_job, hour_of_day=3)
 
 defs = Definitions(
     assets=all_assets,
-    jobs=[all_assets_job],
+    jobs=[collect_reports_job],
     resources={
         "io_manager": io_managers.ReportIOManagerFactory(
             artifacts_dir=EnvVar("ARTIFACTS_DIR"),
@@ -30,5 +33,5 @@ defs = Definitions(
             auth_token=EnvVar("RADIS_AUTH_TOKEN"),
         ),
     },
-    schedules=[schedule],
+    schedules=[collect_reports_schedule],
 )
