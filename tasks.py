@@ -1,4 +1,5 @@
 import os
+import shutil
 from pathlib import Path
 from typing import Literal
 
@@ -86,6 +87,21 @@ def compose_down(
     if cleanup:
         cmd += " --remove-orphans --volumes"
     ctx.run(cmd, pty=True, env={"UID": str(os.getuid()), "GID": str(os.getgid())})
+
+
+@task
+def clean_dagster_home(ctx: Context, env: Environments = "dev"):
+    """Clean dagster_home folder"""
+    if env == "dev":
+        dagster_home_dir = project_dir / "dagster_home_dev"
+    elif env == "prod":
+        dagster_home_dir = project_dir / "dagster_home_prod"
+    else:
+        raise ValueError(f"Unknown environment: {env}")
+
+    for item in dagster_home_dir.glob("*"):
+        if not item.name == "dagster.yaml":
+            shutil.rmtree(item)
 
 
 @task
