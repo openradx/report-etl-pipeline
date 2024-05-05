@@ -11,10 +11,6 @@ from dagster import (
     OutputContext,
 )
 
-from .models import AditReport, SanitizedReport
-
-Report = AditReport | SanitizedReport
-
 
 class ReportIOManager(IOManager):
     def __init__(self, artifacts_dir: str):
@@ -38,7 +34,7 @@ class ReportIOManager(IOManager):
 
         context.log.info(f"Saved {len(obj)} to {filepath}.")
 
-    def load_input(self, context: InputContext) -> list[Report]:
+    def load_input(self, context: InputContext) -> list[dict]:
         if not context.asset_partition_key:
             raise AssertionError("Missing partition key in IO manager")
 
