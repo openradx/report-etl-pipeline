@@ -38,6 +38,12 @@ def revised_reports(
 
     revised_reports: list[RevisedReport] = []
 
+    num_old_reports = len(old_reports)
+    num_new_reports = len(new_reports)
+    num_reports_added = 0
+    num_reports_changed = 0
+    num_reports_unchanged = 0
+
     # Check for newly added reports
     for new_report in new_reports:
         if new_report.sop_instance_uid not in [report.sop_instance_uid for report in old_reports]:
@@ -49,6 +55,7 @@ def revised_reports(
                     revised_at=datetime.now(timezone.utc),
                 )
             )
+            num_reports_added += 1
 
     # Check for changed reports
     for old_report in old_reports:
@@ -64,6 +71,7 @@ def revised_reports(
                             revised_at=datetime.now(timezone.utc),
                         )
                     )
+                    num_reports_changed += 1
                     changed = True
 
         # Add unchanged reports without a revision type
@@ -75,8 +83,19 @@ def revised_reports(
                     revised_at=None,
                 )
             )
+            num_reports_unchanged += 1
 
     # TODO: should we also handle deleted reports?!
+
+    context.add_output_metadata(
+        metadata={
+            "num_old_reports": num_old_reports,
+            "num_new_reports": num_new_reports,
+            "num_reports_added": num_reports_added,
+            "num_reports_changed": num_reports_changed,
+            "num_reports_unchanged": num_reports_unchanged,
+        }
+    )
 
     return [json.loads(report.model_dump_json()) for report in revised_reports]
 
