@@ -2,6 +2,7 @@
 This script is used to materialize the assets for a given partition date from the command line
 and without using the Dagster Web UI.
 """
+
 import argparse
 import os
 from pathlib import Path
@@ -9,7 +10,10 @@ from pathlib import Path
 from dagster import materialize
 from dotenv import load_dotenv
 
-from report_etl_pipeline.assets import adit_reports, reports_with_links, sanitized_reports
+from report_etl_pipeline.assets.collected_reports import (
+    adit_collected_reports,
+    sanitized_collected_reports,
+)
 from report_etl_pipeline.io_managers import ReportIOManager
 from report_etl_pipeline.resources import AditResource
 
@@ -21,7 +25,7 @@ token = os.environ["ADIT_AUTH_TOKEN"]
 
 def materialize_assets(partition: str, artifacts_dir: str):
     materialize(
-        [adit_reports, sanitized_reports, reports_with_links],
+        [adit_collected_reports, sanitized_collected_reports],
         partition_key=partition,
         resources={
             "adit": AditResource(host=host, auth_token=token),

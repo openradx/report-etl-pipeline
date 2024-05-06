@@ -12,7 +12,3 @@ services:
     volumes:
       - ../dagster_home_dev:/opt/dagster/dagster_home
       - ..:/opt/dagster/app
-
-  postgres:
-    env_file:
-      - ../.env.dev

@@ -1,24 +1,33 @@
 from dagster import (
+    AssetSelection,
     Definitions,
     EnvVar,
     build_schedule_from_partitioned_job,
     define_asset_job,
-    load_assets_from_modules,
 )
 
 from . import assets, io_managers, partitions, resources
 
-all_assets = load_assets_from_modules([assets])
-
 collect_reports_job = define_asset_job(
-    name="collect_reports_job", partitions_def=partitions.collect_report_partitions_def
+    name="collect_reports_job",
+    selection=AssetSelection.groups("collected_reports"),
+    partitions_def=partitions.collect_report_partitions_def,
 )
 
-# Schedule every day at 3 AM (UTC)
-collect_reports_schedule = build_schedule_from_partitioned_job(collect_reports_job, hour_of_day=3)
+revise_reports_job = define_asset_job(
+    name="revise_reports_job",
+    selection=AssetSelection.groups("revised_reports"),
+    partitions_def=partitions.revised_report_partitions_def,
+)
+
+# Schedule every day at 2 AM (UTC)
+collect_reports_schedule = build_schedule_from_partitioned_job(collect_reports_job, hour_of_day=2)
+
+# Schedule every day at 4 AM (UTC)
+revise_reports_schedule = build_schedule_from_partitioned_job(revise_reports_job, hour_of_day=4)
 
 defs = Definitions(
-    assets=all_assets,
+    assets=assets.all_assets,
     jobs=[collect_reports_job],
     resources={
         "io_manager": io_managers.ReportIOManagerFactory(
@@ -33,5 +42,5 @@ defs = Definitions(
             auth_token=EnvVar("RADIS_AUTH_TOKEN"),
         ),
     },
-    schedules=[collect_reports_schedule],
+    schedules=[collect_reports_schedule, revise_reports_schedule],
 )

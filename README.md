@@ -14,7 +14,7 @@ Report ETL Pipeline is a [Dagster](https://dagster.io/) project to extract radio
 
 ## Production
 
-- Production uses a Docker compose based setup with PostgreSQL for Dagster internal data. It also uses Nginx for basic auth and SSL encryption.
+- Production uses Nginx for basic auth and SSL encryption.
 - Generate a password file for basic authentication by using `htpasswd -c nginx/.htpasswd <username>` (needs apache2-utils to be installed).
 - Generate SSL certificate with `openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout nginx/ssl.key -out nginx/ssl.crt` (nothing has to be filled out)
 - Copy `example.env` to `.env.prod` and edit the settings in there.

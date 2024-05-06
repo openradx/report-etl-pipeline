@@ -5,16 +5,14 @@ from dagster import (
     AssetExecutionContext,
     Config,
     EnvVar,
-    asset,
 )
 from pydantic import Field
 from pydicom import Dataset
 
-from .errors import FetchingError
-from .models import AditReport, SanitizedReport
-from .partitions import collect_report_partitions_def
-from .resources import AditResource, RadisResource
-from .utils import convert_to_python_date, convert_to_python_time, extract_report_text
+from ..errors import FetchingError
+from ..models import AditReport, SanitizedReport
+from ..resources import AditResource
+from ..utils import convert_to_python_date, convert_to_python_time, extract_report_text
 
 
 class PacsConfig(Config):
@@ -32,10 +30,24 @@ class PacsConfig(Config):
     )
 
 
-@asset(partitions_def=collect_report_partitions_def)
-def adit_reports(
+class SanitizeConfig(Config):
+    language: str = Field(
+        default=EnvVar("REPORT_LANGUAGE"),
+        description="The language of the reports.",
+    )
+    group: int = Field(
+        default=EnvVar("GROUP_ID"),
+        description="The group ID to assign to the reports.",
+    )
+
+
+class PacsSanitizeConfig(PacsConfig, SanitizeConfig):
+    pass
+
+
+def fetch_reports_from_adit(
     context: AssetExecutionContext, config: PacsConfig, adit: AditResource
-) -> list[dict]:
+) -> list[AditReport]:
     context.log.info(f"Fetching reports from ADIT for partition {context.partition_key}.")
 
     time_window = context.partition_time_window
@@ -43,7 +55,7 @@ def adit_reports(
     end = time_window.end - timedelta(seconds=1)
 
     studies = adit.fetch_studies_with_sr(config.pacs_ae_title, start, end)
-    context.log.info(f"{len(studies)} studies found to extract reports from.")
+    context.log.info(f"{len(studies)} studies with SR modality found.")
 
     reports: list[AditReport] = []
     failed_studies: list[Dataset] = []
@@ -51,15 +63,18 @@ def adit_reports(
         try:
             instance = adit.fetch_report_dataset(config.pacs_ae_title, study.StudyInstanceUID)
         except Exception as err:
-            context.log.error(f"Failed to fetch dataset of study {study.StudyInstanceUID}: {err}")
+            context.log.error(
+                f"Failed to fetch SR instance of study {study.StudyInstanceUID}: {err}"
+            )
             failed_studies.append(study)
             continue
 
         if not instance:
-            context.log.debug(f"No radiological report found in study {study.StudyInstanceUID}.")
+            context.log.debug(f"No SR instance found in study {study.StudyInstanceUID}.")
             continue
         if not instance.get("AccessionNumber"):
-            # External studies may not have an accession number. We skip those.
+            # External studies may not have an accession number. We skip those as we need it
+            # to generate a unique document ID.
             context.log.debug(f"Missing accession number in study {study.StudyInstanceUID}.")
             continue
 
@@ -93,7 +108,7 @@ def adit_reports(
                 series_instance_uid=instance.SeriesInstanceUID,
                 sop_instance_uid=instance.SOPInstanceUID,
                 body_original=body_original,
-                created=datetime.now(timezone.utc),
+                created_at=datetime.now(timezone.utc),
             )
         )
 
@@ -115,30 +130,14 @@ def adit_reports(
         }
     )
 
-    return [report.model_dump() for report in reports]
+    return reports
 
 
-class SanitizeConfig(Config):
-    language: str = Field(
-        default=EnvVar("REPORT_LANGUAGE"),
-        description="The language of the reports.",
-    )
-    group: int = Field(
-        default=EnvVar("GROUP_ID"),
-        description="The group ID to assign to the reports.",
-    )
+def create_document_id(report: AditReport):
+    return f"{report.pacs_aet}_{report.accession_number}"
 
 
-@asset(partitions_def=collect_report_partitions_def)
-def sanitized_reports(
-    context: AssetExecutionContext,
-    config: SanitizeConfig,
-    adit_reports: list[dict],
-) -> list[dict]:
-    context.log.info(f"Sanitize {len(adit_reports)} reports.")
-
-    reports = [AditReport.model_validate(report) for report in adit_reports]
-
+def sanitize_report(report: AditReport, config: SanitizeConfig) -> SanitizedReport:
     befunder_pattern = re.compile(r"Befunder:.*")
     newline_pattern = re.compile(r"<br>")
 
@@ -146,48 +145,24 @@ def sanitized_reports(
         "http://thor-pacs02/Synapse/WebQuery/Index?path=/Alle%20Studien/accessionnumber="
     )
 
-    sanitized_reports: list[SanitizedReport] = []
-    for report in reports:
-        # TODO: fail without accession number
+    document_id = f"{report.pacs_aet}_{report.accession_number}"
 
-        # Create a document ID from the PACS AE title and the accession number
-        document_id = f"{report.pacs_aet}_{report.accession_number}"
+    # Sanitize the report body
+    body_sanitized = report.body_original
+    body_sanitized = befunder_pattern.sub("", body_sanitized)
+    body_sanitized = newline_pattern.sub("\n", body_sanitized)
+    body_sanitized = body_sanitized.strip()
 
-        # Sanitize the report body
-        body_sanitized = report.body_original
-        body_sanitized = befunder_pattern.sub("", body_sanitized)
-        body_sanitized = newline_pattern.sub("\n", body_sanitized)
-        body_sanitized = body_sanitized.strip()
+    # Create a link if the report has an accession number
+    links = []
+    if report.accession_number:
+        links.append(link_base_url + report.accession_number)
 
-        # Create a link if the report has an accession number
-        links = []
-        if report.accession_number:
-            links.append(link_base_url + report.accession_number)
-
-        report_data = {
-            **report.model_dump(),
-            "document_id": document_id,
-            "language": config.language,
-            "groups": [config.group],
-            "links": links,
-            "body_sanitized": body_sanitized,
-        }
-        sanitized_reports.append(SanitizedReport(**report_data))
-
-    context.log.info("Sanitization finished.")
-
-    return [report.model_dump() for report in sanitized_reports]
-
-
-@asset(partitions_def=collect_report_partitions_def)
-def radis_reports(
-    context: AssetExecutionContext, sanitized_reports: list[dict], radis: RadisResource
-) -> None:
-    context.log.info(f"Uploading {len(sanitized_reports)} reports to RADIS.")
-
-    reports = [SanitizedReport.model_validate(report) for report in sanitized_reports]
-
-    for report in reports:
-        radis.store_report(report)
-
-    context.log.info("Upload finished.")
+    return SanitizedReport(
+        **report.model_dump(),
+        document_id=document_id,
+        language=config.language,
+        groups=[config.group],
+        links=links,
+        body_sanitized=body_sanitized,
+    )

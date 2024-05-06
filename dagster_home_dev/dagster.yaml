@@ -4,16 +4,6 @@ run_coordinator:
   config:
     max_concurrent_runs: 1
 
-storage:
-  postgres:
-    postgres_db:
-      hostname: postgres
-      db_name: postgres
-      username: postgres
-      password:
-        env: POSTGRES_PASSWORD
-      port: 5432
-
 telemetry:
   enabled: false
 

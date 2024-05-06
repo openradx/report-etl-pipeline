@@ -1,7 +1,7 @@
 from datetime import date, datetime
 from typing import Literal
 
-from pydantic import BaseModel, field_serializer, field_validator
+from pydantic import BaseModel
 
 
 class AditReport(BaseModel):
@@ -18,29 +18,7 @@ class AditReport(BaseModel):
     series_instance_uid: str
     sop_instance_uid: str
     body_original: str
-    created: datetime
-
-    @field_validator("patient_birth_date")
-    @classmethod
-    def validate_patient_birth_date(cls, value: str | date):
-        if isinstance(value, str):
-            return date.fromisoformat(value)
-        return value
-
-    @field_validator("study_datetime")
-    @classmethod
-    def validate_study_datetime(cls, value: str | datetime):
-        if isinstance(value, str):
-            return datetime.fromisoformat(value)
-        return value
-
-    @field_serializer("patient_birth_date")
-    def serialize_patient_birth_date(self, value: date):
-        return value.isoformat()
-
-    @field_serializer("study_datetime")
-    def serialize_study_datetime(self, value: datetime):
-        return value.isoformat()
+    created_at: datetime
 
 
 class SanitizedReport(AditReport):
@@ -49,3 +27,8 @@ class SanitizedReport(AditReport):
     groups: list[int]
     links: list[str]
     body_sanitized: str
+
+
+class RevisedReport(SanitizedReport):
+    revision_type: Literal["added", "changed"] | None
+    revised_at: datetime | None
