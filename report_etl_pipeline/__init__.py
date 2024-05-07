@@ -20,11 +20,11 @@ revise_reports_job = define_asset_job(
     partitions_def=partitions.revised_report_partitions_def,
 )
 
-# Schedule every day at 2 AM (UTC)
+# Schedule every day at 2 AM (UTC) / 3 AM (MEZ) / 4 AM (MESZ)
 collect_reports_schedule = build_schedule_from_partitioned_job(collect_reports_job, hour_of_day=2)
 
-# Schedule every day at 4 AM (UTC)
-revise_reports_schedule = build_schedule_from_partitioned_job(revise_reports_job, hour_of_day=4)
+# Schedule every day at 3 AM (UTC) / 4 AM (MEZ) / 5 AM (MESZ)
+revise_reports_schedule = build_schedule_from_partitioned_job(revise_reports_job, hour_of_day=3)
 
 defs = Definitions(
     assets=assets.all_assets,
