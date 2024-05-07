@@ -52,7 +52,7 @@ def build_compose_cmd(env: Environments):
 def compose_up(
     ctx: Context,
     env: Environments = "dev",
-    port: int = 3000,
+    port: int | None = None,
     no_build: bool = False,
 ):
     """Start Dagster pipeline
@@ -64,7 +64,7 @@ def compose_up(
     """
     build_opt = "--no-build" if no_build else "--build"
     cmd: list[str] = []
-    if port:
+    if port is not None:
         if env == "dev":
             cmd.append(f"export DAGSTER_DEV_PORT={port} && ")
         elif env == "prod":
