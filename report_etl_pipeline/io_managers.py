@@ -62,6 +62,7 @@ class ReportIOManagerFactory(ConfigurableIOManagerFactory):
         if not self.artifacts_dir:
             artifacts_dir = context.instance.storage_directory()
 
+        assert artifacts_dir is not None
         artifacts_path = Path(artifacts_dir)
         if not artifacts_path.is_absolute():
             artifacts_path = Path(context.instance.root_directory) / artifacts_path
