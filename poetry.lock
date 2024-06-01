@@ -2,16 +2,17 @@
 
 [[package]]
 name = "adit-client"
-version = "0.3.0"
+version = "0.5.0"
 description = "ADIT Client library to connect to an ADIT server."
 optional = false
 python-versions = "<4.0,>=3.11"
 files = [
-    {file = "adit_client-0.3.0-py3-none-any.whl", hash = "sha256:63e33aa9f3678a253830424a57cb16fc01146a4e6de3308d9c94ea74c2eef373"},
-    {file = "adit_client-0.3.0.tar.gz", hash = "sha256:9d9b922e5ac19955ccf8b9d105a81da2f80b0d0c2a3c913087e9300a82b1b00c"},
+    {file = "adit_client-0.5.0-py3-none-any.whl", hash = "sha256:9455ceefe3a2e033c3b6c7c5c47c3a8a8189a7a2e678cde63a09eeff280ee0fa"},
+    {file = "adit_client-0.5.0.tar.gz", hash = "sha256:0c10f5c631029c8e48973c546ba73d8c206ca93488588554e67a73906d67c7c2"},
 ]
 
 [package.dependencies]
+dicognito = ">=0.17.0,<0.18.0"
 dicomweb-client = ">=0.59.1,<0.60.0"
 pydicom = ">=2.4.3,<3.0.0"
 
@@ -516,6 +517,20 @@ files = [
     {file = "decorator-5.1.1-py3-none-any.whl", hash = "sha256:b8c3f85900b9dc423225913c5aace94729fe1fa9763b38939a95226f02d37186"},
     {file = "decorator-5.1.1.tar.gz", hash = "sha256:637996211036b6385ef91435e4fae22989472f9d571faba8927ba8253acbc330"},
 ]
+
+[[package]]
+name = "dicognito"
+version = "0.17.0"
+description = "A tool for anonymizing DICOM files"
+optional = false
+python-versions = "*"
+files = [
+    {file = "dicognito-0.17.0-py3-none-any.whl", hash = "sha256:91058bd58ab92d2cdbfecec64a2aa7e84c62b42dabdc72962cf40e7b921d759d"},
+    {file = "dicognito-0.17.0.tar.gz", hash = "sha256:96e700d69d4915251a297b72ab0f6fe414b42fc9b709f04b440847805ca502af"},
+]
+
+[package.dependencies]
+pydicom = ">=2.3.1"
 
 [[package]]
 name = "dicomweb-client"
