@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from pathlib import Path
 
 from adit_client import AditClient
 from dagster import ConfigurableResource, DagsterLogManager
@@ -16,6 +17,7 @@ from .models import SanitizedReport
 class AditResource(ConfigurableResource):
     host: str
     auth_token: str
+    ca_bundle: str
     max_search_results: int = Field(
         default=199,
         description=(
@@ -29,7 +31,17 @@ class AditResource(ConfigurableResource):
     _logger: DagsterLogManager = PrivateAttr()
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
-        self._client = AditClient(server_url=self.host, auth_token=self.auth_token)
+        verify: str | bool = True
+        if self.ca_bundle:
+            ca_bundle_path = Path(self.ca_bundle)
+            if ca_bundle_path.is_absolute():
+                verify = ca_bundle_path.as_posix()
+            else:
+                instance = context.instance
+                assert instance
+                verify = (Path(instance.root_directory) / ca_bundle_path).as_posix()
+
+        self._client = AditClient(server_url=self.host, auth_token=self.auth_token, verify=verify)
 
         if not context.log:
             raise ValueError("Missing log manager.")
@@ -106,6 +118,7 @@ class AditResource(ConfigurableResource):
 class RadisResource(ConfigurableResource):
     radis_host: str
     auth_token: str
+    ca_bundle: str
 
     _client: RadisClient = PrivateAttr()
     _logger: DagsterLogManager = PrivateAttr()

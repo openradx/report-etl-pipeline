@@ -36,10 +36,12 @@ defs = Definitions(
         "adit": resources.AditResource(
             host=EnvVar("ADIT_HOST"),
             auth_token=EnvVar("ADIT_AUTH_TOKEN"),
+            ca_bundle=EnvVar("CA_BUNDLE"),
         ),
         "radis": resources.RadisResource(
             radis_host=EnvVar("RADIS_HOST"),
             auth_token=EnvVar("RADIS_AUTH_TOKEN"),
+            ca_bundle=EnvVar("CA_BUNDLE"),
         ),
     },
     schedules=[collect_reports_schedule, revise_reports_schedule],
