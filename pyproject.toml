@@ -16,7 +16,7 @@ radis-client = "*"
 [tool.poetry.group.dev.dependencies]
 ipython = "^8.14.0"
 pyright = "^1.1.323"
-ruff = "^0.3.3"
+ruff = "^0.4.8"
 invoke = "^2.2.0"
 ipykernel = "^6.25.1"
 
@@ -27,7 +27,7 @@ reportUnnecessaryTypeIgnoreComment = true
 
 [tool.ruff]
 line-length = 100
-select = ["E", "F", "I", "DJ"]
+lint.select = ["E", "F", "I", "DJ"]
 
 [tool.dagster]
 module_name = "report_etl_pipeline"
