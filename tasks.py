@@ -49,6 +49,15 @@ def build_compose_cmd(env: Environments):
 
 
 @task
+def lint(ctx: Context):
+    """Lint the source code (ruff, pyright)"""
+    cmd_ruff = "poetry run ruff check ."
+    ctx.run(cmd_ruff, pty=True)
+    cmd_pyright = "poetry run pyright"
+    ctx.run(cmd_pyright, pty=True)
+
+
+@task
 def compose_up(
     ctx: Context,
     env: Environments = "dev",
