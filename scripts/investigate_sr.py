@@ -1,6 +1,5 @@
 import argparse
 import os
-import re
 
 from adit_client import AditClient
 from dotenv import load_dotenv

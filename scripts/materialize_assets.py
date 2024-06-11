@@ -28,7 +28,7 @@ def materialize_assets(partition: str, artifacts_dir: str):
         [adit_collected_reports, sanitized_collected_reports],
         partition_key=partition,
         resources={
-            "adit": AditResource(host=host, auth_token=token),
+            "adit": AditResource(host=host, auth_token=token, ca_bundle=""),
             "io_manager": ReportIOManager(artifacts_dir=artifacts_dir),
         },
         run_config={
