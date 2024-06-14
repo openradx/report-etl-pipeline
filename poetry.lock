@@ -2201,13 +2201,13 @@ cffi = {version = "*", markers = "implementation_name == \"pypy\""}
 
 [[package]]
 name = "radis-client"
-version = "0.3.3"
+version = "0.3.4"
 description = "RADIS client library to connect to a RADIS server."
 optional = false
-python-versions = ">=3.10,<4.0"
+python-versions = "<4.0,>=3.11"
 files = [
-    {file = "radis_client-0.3.3-py3-none-any.whl", hash = "sha256:e2670128a32dde3ce76d232149f70e4d02ec12c7bd9338899f7e88df595d1222"},
-    {file = "radis_client-0.3.3.tar.gz", hash = "sha256:a29a20f5fcaa35c905b90bd27ffe6b9862ee62b9bea4b9585b45cd674da0bf91"},
+    {file = "radis_client-0.3.4-py3-none-any.whl", hash = "sha256:0a524bdc26176bdc61309b977ec57c14ff493e52d0c7541a4d27111a636c5370"},
+    {file = "radis_client-0.3.4.tar.gz", hash = "sha256:3022aae35c47c6553c6d337ab54bf5427b1942e5a94b78ecdb0da7044a804b16"},
 ]
 
 [package.dependencies]
@@ -3029,4 +3029,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.11,<3.13"
-content-hash = "a2df9e3c6ed9a24794f240354727f197557aa3233f329bc23a90e08099ae8c8c"
+content-hash = "a6c305c92c85df7bcb4bea9d93f296cd3f628855fe91ac9204b6f661128a5586"
