@@ -11,7 +11,7 @@ dagster = "^1.6.11"
 dagster-webserver = "^1.6.11"
 pandas = "^2.0.3"
 python = ">=3.11,<3.13"
-radis-client = "^0.3.4"
+radis-client = "^0.3.6"
 
 [tool.poetry.group.dev.dependencies]
 invoke = "^2.2.0"

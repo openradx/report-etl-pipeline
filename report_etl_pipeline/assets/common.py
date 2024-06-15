@@ -153,16 +153,11 @@ def sanitize_report(report: AditReport, config: SanitizeConfig) -> SanitizedRepo
     body_sanitized = newline_pattern.sub("\n", body_sanitized)
     body_sanitized = body_sanitized.strip()
 
-    # Create a link if the report has an accession number
-    links = []
-    if report.accession_number:
-        links.append(link_base_url + report.accession_number)
-
     return SanitizedReport(
         **report.model_dump(),
         document_id=document_id,
         language=config.language,
         groups=[config.group],
-        links=links,
+        pacs_link=link_base_url + report.accession_number,
         body_sanitized=body_sanitized,
     )

@@ -6,7 +6,7 @@ from dagster import ConfigurableResource, DagsterLogManager
 from dagster._core.execution.context.init import InitResourceContext
 from pydantic import Field, PrivateAttr
 from pydicom import Dataset
-from radis_client import RadisClient
+from radis_client import RadisClient, ReportData
 from requests import HTTPError
 
 from report_etl_pipeline.utils import filter_radiological_report_series
@@ -137,25 +137,27 @@ class RadisResource(ConfigurableResource):
         try:
             self._client.update_report(
                 document_id,
-                {
-                    "document_id": document_id,
-                    "language": report.language,
-                    "groups": report.groups,
-                    "pacs_aet": report.pacs_aet,
-                    "pacs_name": report.pacs_name,
-                    "patient_id": report.patient_id,
-                    "patient_birth_date": report.patient_birth_date,
-                    "patient_sex": report.patient_sex,
-                    "study_instance_uid": report.study_instance_uid,
-                    "accession_number": report.accession_number,
-                    "study_description": report.study_description,
-                    "study_datetime": report.study_datetime,
-                    "modalities_in_study": report.modalities_in_study,
-                    "series_instance_uid": report.series_instance_uid,
-                    "sop_instance_uid": report.sop_instance_uid,
-                    "links": report.links,
-                    "body": report.body_sanitized,
-                },
+                ReportData(
+                    document_id=document_id,
+                    language=report.language,
+                    groups=report.groups,
+                    pacs_aet=report.pacs_aet,
+                    pacs_name=report.pacs_name,
+                    pacs_link=report.pacs_link,
+                    patient_id=report.patient_id,
+                    patient_birth_date=report.patient_birth_date,
+                    patient_sex=report.patient_sex,
+                    study_description=report.study_description,
+                    study_datetime=report.study_datetime,
+                    modalities=report.modalities_in_study,
+                    metadata={
+                        "study_instance_uid": report.study_instance_uid,
+                        "accession_number": report.accession_number,
+                        "sop_instance_uid": report.sop_instance_uid,
+                        "series_instance_uid": report.series_instance_uid,
+                    },
+                    body=report.body_sanitized,
+                ),
                 upsert=True,
             )
         except HTTPError as err:

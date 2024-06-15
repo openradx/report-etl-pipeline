@@ -25,7 +25,7 @@ class SanitizedReport(AditReport):
     document_id: str
     language: str
     groups: list[int]
-    links: list[str]
+    pacs_link: str
     body_sanitized: str
 
 
