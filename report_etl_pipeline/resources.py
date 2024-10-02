@@ -149,10 +149,10 @@ class RadisResource(ConfigurableResource):
                     patient_sex=report.patient_sex,
                     study_description=report.study_description,
                     study_datetime=report.study_datetime,
+                    study_instance_uid=report.study_instance_uid,
+                    accession_number=report.accession_number,
                     modalities=report.modalities_in_study,
                     metadata={
-                        "study_instance_uid": report.study_instance_uid,
-                        "accession_number": report.accession_number,
                         "sop_instance_uid": report.sop_instance_uid,
                         "series_instance_uid": report.series_instance_uid,
                     },
