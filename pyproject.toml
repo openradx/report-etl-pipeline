@@ -6,19 +6,20 @@ authors = ["Kai Schlamp <kai.schlamp@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-adit-client = "^0.5.0"
+python = ">=3.12,<3.13"
+
+adit-client = { git = "https://github.com/openradx/adit-client.git" }
 dagster = "^1.6.11"
 dagster-webserver = "^1.6.11"
 pandas = "^2.0.3"
-python = ">=3.11,<3.13"
-radis-client = "^0.3.6"
+radis-client = { git = "https://github.com/openradx/radis-client.git" }
 
 [tool.poetry.group.dev.dependencies]
 invoke = "^2.2.0"
 ipykernel = "^6.25.1"
 ipython = "^8.14.0"
 pyright = "^1.1.323"
-ruff = "^0.4.8"
+ruff = "^0.6.5"
 
 [tool.pyright]
 ignore = ["**/*.ipynb"]
