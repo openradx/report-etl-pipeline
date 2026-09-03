@@ -1,4 +1,4 @@
-FROM python:3.12-bookworm AS python-base
+FROM python:3.14-bookworm AS python-base
 
 # python
 # ENV variables are also available in the later build stages

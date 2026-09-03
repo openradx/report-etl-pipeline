@@ -94,7 +94,7 @@ class AditResource(ConfigurableResource):
         if len(series_list) == 0:
             return None
         if len(series_list) > 1:
-            self._logger.warn(
+            self._logger.warning(
                 f"Multiple radiological report series in study {study_instance_uid}."
                 "Only the first one will be used."
             )
@@ -107,7 +107,7 @@ class AditResource(ConfigurableResource):
         if len(instances) == 0:
             raise AssertionError(f"Missing report instance in study {study_instance_uid}.")
         if len(instances) > 1:
-            self._logger.warn(
+            self._logger.warning(
                 f"Multiple radiological report instances in study {study_instance_uid}. "
                 "Only the first one will be used."
             )

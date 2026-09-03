@@ -84,7 +84,7 @@ def fetch_reports_from_adit(
 
         body_original = extract_report_text(instance)
         if not body_original:
-            context.log.warn(f"Missing report text in study {study.StudyInstanceUID}.")
+            context.log.warning(f"Missing report text in study {study.StudyInstanceUID}.")
             continue
 
         patient_birth_date = convert_to_python_date(instance.PatientBirthDate)
