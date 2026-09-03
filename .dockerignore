@@ -12,8 +12,9 @@ dagster_home_prod
 ssl.crt
 ssl.key
 
-# version control, editor and dev container config
+# version control, CI, editor and dev container config
 .git
+.github
 .gitignore
 .vscode
 .devcontainer
