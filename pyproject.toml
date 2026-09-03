@@ -10,7 +10,11 @@ dependencies = [
     "dagster>=1.13.20",
     "dagster-webserver>=1.13.20",
     "pandas>=3.0.5",
+    "pydantic>=2.13.5",
+    "pydicom>=3.0.2",
+    "python-dotenv>=1.2.3",
     "radis-client>=0.9.0",
+    "requests>=2.34.2",
 ]
 
 [dependency-groups]

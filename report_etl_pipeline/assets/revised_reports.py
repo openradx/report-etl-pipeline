@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 from dagster import (
     AssetExecutionContext,
     AssetKey,
-    SourceAsset,
+    AssetSpec,
     asset,
 )
 
@@ -13,9 +13,11 @@ from ..partitions import revised_report_partitions_def
 from ..resources import AditResource, RadisResource
 from .common import PacsSanitizeConfig, fetch_reports_from_adit, sanitize_report
 
-collected_reports = SourceAsset(
-    group_name="revised_reports",
+# External asset representing the reports file that collect_reports_job writes per partition.
+# It is loaded from the artifacts directory by the IO manager.
+collected_reports = AssetSpec(
     key=AssetKey("collected_reports"),
+    group_name="revised_reports",
     partitions_def=revised_report_partitions_def,
 )
 
