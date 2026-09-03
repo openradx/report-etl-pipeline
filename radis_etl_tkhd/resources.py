@@ -2,8 +2,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 from adit_client import AditClient
-from dagster import ConfigurableResource, DagsterLogManager
-from dagster._core.execution.context.init import InitResourceContext
+from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext
 from pydantic import Field, PrivateAttr
 from pydicom import Dataset
 from radis_client import RadisClient, ReportData

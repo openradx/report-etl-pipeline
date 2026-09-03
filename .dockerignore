@@ -1,3 +1,29 @@
+# virtual environment
 .venv
+
+# Dagster instance data (mounted at runtime)
 dagster_home_dev
 dagster_home_prod
+
+# secrets and certificates (provided by Docker Compose at runtime)
+.env
+.env.*
+.htpasswd
+ssl.crt
+ssl.key
+
+# version control, editor and dev container config
+.git
+.gitignore
+.vscode
+.devcontainer
+
+# caches and notebooks
+__pycache__
+*.pyc
+.ruff_cache
+notebooks
+
+# dev tooling not needed inside the image
+compose
+tasks.py

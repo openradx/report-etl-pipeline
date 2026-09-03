@@ -26,7 +26,7 @@ revise_reports_schedule = build_schedule_from_partitioned_job(revise_reports_job
 
 defs = Definitions(
     assets=assets.all_assets,
-    jobs=[collect_reports_job],
+    jobs=[collect_reports_job, revise_reports_job],
     resources={
         "io_manager": io_managers.ReportIOManagerFactory(
             artifacts_dir=EnvVar("ARTIFACTS_DIR"),

@@ -1,7 +1,7 @@
 [project]
 name = "radis-etl-tkhd"
 version = "0.1.0"
-description = ""
+description = "Dagster pipeline to extract radiological reports from a PACS (via ADIT) and transfer them to RADIS"
 readme = "README.md"
 authors = [{ name = "Kai Schlamp", email = "kai.schlamp@gmail.com" }]
 requires-python = ">=3.14,<3.15"

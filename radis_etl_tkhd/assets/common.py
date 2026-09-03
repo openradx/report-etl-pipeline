@@ -145,7 +145,7 @@ def sanitize_report(report: AditReport, config: SanitizeConfig) -> SanitizedRepo
         "http://thor-pacs02/Synapse/WebQuery/Index?path=/Alle%20Studien/accessionnumber="
     )
 
-    document_id = f"{report.pacs_aet}_{report.accession_number}"
+    document_id = create_document_id(report)
 
     # Sanitize the report body
     body_sanitized = report.body_original
