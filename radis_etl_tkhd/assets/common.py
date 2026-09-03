@@ -39,6 +39,14 @@ class SanitizeConfig(Config):
         default=EnvVar.int("GROUP_ID"),
         description="The group ID to assign to the reports.",
     )
+    pacs_link_template: str = Field(
+        default=EnvVar("PACS_LINK_TEMPLATE"),
+        description=(
+            "Template of the link to open the study of a report in the PACS viewer "
+            "(stored in the report metadata). `{accession_number}` is replaced by the "
+            "accession number of the report."
+        ),
+    )
 
 
 class PacsSanitizeConfig(PacsConfig, SanitizeConfig):
@@ -141,11 +149,8 @@ def sanitize_report(report: AditReport, config: SanitizeConfig) -> SanitizedRepo
     befunder_pattern = re.compile(r"Befunder:.*")
     newline_pattern = re.compile(r"<br>")
 
-    link_base_url = (
-        "http://thor-pacs02/Synapse/WebQuery/Index?path=/Alle%20Studien/accessionnumber="
-    )
-
     document_id = create_document_id(report)
+    pacs_link = config.pacs_link_template.format(accession_number=report.accession_number)
 
     # Sanitize the report body
     body_sanitized = report.body_original
@@ -158,6 +163,6 @@ def sanitize_report(report: AditReport, config: SanitizeConfig) -> SanitizedRepo
         document_id=document_id,
         language=config.language,
         groups=[config.group],
-        pacs_link=link_base_url + report.accession_number,
+        pacs_link=pacs_link,
         body_sanitized=body_sanitized,
     )
