@@ -23,6 +23,7 @@ dev = [
     "ipykernel>=7.3.0",
     "ipython>=9.17.1",
     "pyright>=1.1.411",
+    "pytest>=9.1.1",
     "ruff>=0.16.5",
 ]
 
@@ -30,6 +31,9 @@ dev = [
 ignore = ["**/*.ipynb"]
 typeCheckingMode = "basic"
 reportUnnecessaryTypeIgnoreComment = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
 
 [tool.ruff]
 line-length = 100

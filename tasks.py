@@ -58,6 +58,12 @@ def lint(ctx: Context):
 
 
 @task
+def test(ctx: Context):
+    """Run the tests (pytest)"""
+    ctx.run("uv run pytest", pty=True)
+
+
+@task
 def compose_up(
     ctx: Context,
     env: Environments = "dev",

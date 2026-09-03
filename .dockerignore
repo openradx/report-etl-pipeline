@@ -27,3 +27,4 @@ notebooks
 # dev tooling not needed inside the image
 compose
 tasks.py
+tests
