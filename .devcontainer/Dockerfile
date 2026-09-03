@@ -15,3 +15,6 @@ RUN pipx install invoke && \
 
 RUN pipx install uv && \
   uv generate-shell-completion bash >> ~/.bash_completion
+
+RUN pipx install rust-just && \
+  just --completions bash >> ~/.bash_completion

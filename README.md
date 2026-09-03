@@ -14,6 +14,7 @@ RADIS ETL TKHD is a [Dagster](https://dagster.io/) pipeline to extract radiologi
 - Production uses Nginx for basic auth and SSL encryption.
   - Generate a password file for basic authentication by using `htpasswd -c .htpasswd <username>` (needs apache2-utils to be installed).
   - Generate SSL certificate with `openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout ssl.key -out ssl.crt` (nothing has to be filled out)
-- Install the dependencies with `uv sync` and activate the virtual environment with `source .venv/bin/activate`. Then start the stack with `inv compose-up` or `inv compose-up --env prod`.
+- Install the dependencies with `uv sync` (or `just sync`) and activate the virtual environment with `source .venv/bin/activate`. Then start the stack with `just up` or `just up prod`.
+- Run `just` to list the most common commands. `just check` runs ruff, pyright and pytest and should pass before committing changes. The same tasks are also available as invoke tasks (`inv --list`).
 - Forward port `3500` in development resp. `3600` in production to Dagster UI in VS Code ports tab.
 - Alternatively (for testing purposes), run a single job from command line, e.g. `python ./scripts/materialize_assets.py -d ./artifacts/ 2023-01-01`.
