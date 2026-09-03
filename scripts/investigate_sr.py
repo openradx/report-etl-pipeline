@@ -4,7 +4,7 @@ import os
 from adit_client import AditClient
 from dotenv import load_dotenv
 
-from report_etl_pipeline.utils import extract_report_text, filter_radiological_report_series
+from radis_etl_tkhd.utils import extract_report_text, filter_radiological_report_series
 
 load_dotenv(override=True)
 

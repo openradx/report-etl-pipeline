@@ -1,8 +1,8 @@
-# Report ETL Pipeline
+# RADIS ETL TKHD
 
 ## About
 
-Report ETL Pipeline is a [Dagster](https://dagster.io/) pipeline to extract radiological reports (inside SR Modality instances) from a PACS (by using [ADIT](https://github.com/radexperts/adit)) and transfer them to RADIS for creating a full-text search index. The pipeline contains two jobs. `collect_reports_job` collects all reports since the year 2012 (by using Dagster backfills) and also has a schedule to collect reports during the night from the previous day to send them to RADIS. `revise_reports_job` has a schedule to collect reports from the day 7 days before to collect changed or afterwards added reports and send those to RADIS.
+RADIS ETL TKHD is a [Dagster](https://dagster.io/) pipeline to extract radiological reports (inside SR Modality instances) from a PACS (by using [ADIT](https://github.com/radexperts/adit)) and transfer them to RADIS for creating a full-text search index. The pipeline contains two jobs. `collect_reports_job` collects all reports since the year 2012 (by using Dagster backfills) and also has a schedule to collect reports during the night from the previous day to send them to RADIS. `revise_reports_job` has a schedule to collect reports from the day 7 days before to collect changed or afterwards added reports and send those to RADIS.
 
 ## Setup
 

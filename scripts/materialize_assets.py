@@ -10,12 +10,12 @@ from pathlib import Path
 from dagster import materialize
 from dotenv import load_dotenv
 
-from report_etl_pipeline.assets.collected_reports import (
+from radis_etl_tkhd.assets.collected_reports import (
     adit_collected_reports,
     sanitized_collected_reports,
 )
-from report_etl_pipeline.io_managers import ReportIOManager
-from report_etl_pipeline.resources import AditResource
+from radis_etl_tkhd.io_managers import ReportIOManager
+from radis_etl_tkhd.resources import AditResource
 
 load_dotenv(override=True)
 

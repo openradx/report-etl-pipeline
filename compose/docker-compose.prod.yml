@@ -4,7 +4,7 @@ services:
   dagster:
     build:
       target: production
-    image: report_etl_pipeline_prod:latest
+    image: radis_etl_tkhd_prod:latest
     env_file:
       - ../.env.prod
     volumes:

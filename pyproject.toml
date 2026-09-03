@@ -1,5 +1,5 @@
 [project]
-name = "report-etl-pipeline"
+name = "radis-etl-tkhd"
 version = "0.1.0"
 description = ""
 readme = "README.md"
@@ -36,7 +36,7 @@ line-length = 100
 lint.select = ["E", "F", "I", "DJ"]
 
 [tool.dagster]
-module_name = "report_etl_pipeline"
+module_name = "radis_etl_tkhd"
 
 [build-system]
 requires = ["hatchling"]

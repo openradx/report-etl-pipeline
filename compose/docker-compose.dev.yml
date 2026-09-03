@@ -4,7 +4,7 @@ services:
   dagster:
     build:
       target: development
-    image: report_etl_pipeline_dev:latest
+    image: radis_etl_tkhd_dev:latest
     ports:
       - "${DAGSTER_DEV_PORT:-3500}:3000"
     env_file:

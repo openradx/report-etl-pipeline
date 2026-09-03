@@ -8,8 +8,8 @@ from invoke.tasks import task
 
 Environments = Literal["dev", "prod"]
 
-stack_name_dev = "report_etl_pipeline_dev"
-stack_name_prod = "report_etl_pipeline_prod"
+stack_name_dev = "radis_etl_tkhd_dev"
+stack_name_prod = "radis_etl_tkhd_prod"
 
 project_dir = Path(__file__).resolve().parent
 compose_dir = project_dir / "compose"

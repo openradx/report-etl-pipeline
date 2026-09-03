@@ -9,7 +9,7 @@ from pydicom import Dataset
 from radis_client import RadisClient, ReportData
 from requests import HTTPError
 
-from report_etl_pipeline.utils import filter_radiological_report_series
+from radis_etl_tkhd.utils import filter_radiological_report_series
 
 from .models import SanitizedReport
 

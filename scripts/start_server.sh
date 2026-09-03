@@ -10,4 +10,4 @@ if [[ ! -f "$DAGSTER_HOME/dagster.yaml" ]]; then
     exit 1
 fi
 
-dagster dev -h 0.0.0.0 -m report_etl_pipeline
+dagster dev -h 0.0.0.0 -m radis_etl_tkhd

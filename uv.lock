@@ -1299,7 +1299,7 @@ wheels = [
 ]
 
 [[package]]
-name = "report-etl-pipeline"
+name = "radis-etl-tkhd"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
