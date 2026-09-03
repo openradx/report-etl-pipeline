@@ -51,9 +51,9 @@ def build_compose_cmd(env: Environments):
 @task
 def lint(ctx: Context):
     """Lint the source code (ruff, pyright)"""
-    cmd_ruff = "poetry run ruff check ."
+    cmd_ruff = "uv run ruff check ."
     ctx.run(cmd_ruff, pty=True)
-    cmd_pyright = "poetry run pyright"
+    cmd_pyright = "uv run pyright"
     ctx.run(cmd_pyright, pty=True)
 
 
@@ -116,4 +116,4 @@ def clean_dagster_home(ctx: Context, env: Environments = "dev"):
 @task
 def show_outdated(ctx: Context):
     """Show outdated dependencies"""
-    ctx.run("poetry show --outdated --top-level")
+    ctx.run("uv tree --outdated --depth 1")

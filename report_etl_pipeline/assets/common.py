@@ -36,7 +36,7 @@ class SanitizeConfig(Config):
         description="The language of the reports.",
     )
     group: int = Field(
-        default=EnvVar("GROUP_ID"),
+        default=EnvVar.int("GROUP_ID"),
         description="The group ID to assign to the reports.",
     )
 

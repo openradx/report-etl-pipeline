@@ -1,25 +1,26 @@
-[tool.poetry]
+[project]
 name = "report-etl-pipeline"
 version = "0.1.0"
 description = ""
-authors = ["Kai Schlamp <kai.schlamp@gmail.com>"]
 readme = "README.md"
+authors = [{ name = "Kai Schlamp", email = "kai.schlamp@gmail.com" }]
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "adit-client>=0.51.0",
+    "dagster>=1.13.20",
+    "dagster-webserver>=1.13.20",
+    "pandas>=3.0.5",
+    "radis-client>=0.9.0",
+]
 
-[tool.poetry.dependencies]
-python = ">=3.12,<3.13"
-
-adit-client = { git = "https://github.com/openradx/adit-client.git" }
-dagster = "^1.6.11"
-dagster-webserver = "^1.6.11"
-pandas = "^2.0.3"
-radis-client = { git = "https://github.com/openradx/radis-client.git" }
-
-[tool.poetry.group.dev.dependencies]
-invoke = "^2.2.0"
-ipykernel = "^6.25.1"
-ipython = "^8.14.0"
-pyright = "^1.1.323"
-ruff = "^0.6.5"
+[dependency-groups]
+dev = [
+    "invoke>=3.0.3",
+    "ipykernel>=7.3.0",
+    "ipython>=9.17.1",
+    "pyright>=1.1.411",
+    "ruff>=0.16.5",
+]
 
 [tool.pyright]
 ignore = ["**/*.ipynb"]
@@ -34,5 +35,5 @@ lint.select = ["E", "F", "I", "DJ"]
 module_name = "report_etl_pipeline"
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"

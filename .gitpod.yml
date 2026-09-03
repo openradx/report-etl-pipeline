@@ -3,7 +3,7 @@ image:
 
 tasks:
   - name: setup
-    init: poetry install
+    init: uv sync
 
 vscode:
   extensions:

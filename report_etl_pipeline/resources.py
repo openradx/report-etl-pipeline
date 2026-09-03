@@ -161,7 +161,6 @@ class RadisResource(ConfigurableResource):
                 upsert=True,
             )
         except HTTPError as err:
-            self._logger.error(
-                f"Failed to store report {report.document_id}: {err.response.json()}"
-            )
+            details = err.response.json() if err.response is not None else str(err)
+            self._logger.error(f"Failed to store report {report.document_id}: {details}")
             raise err

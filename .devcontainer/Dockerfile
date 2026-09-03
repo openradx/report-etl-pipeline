@@ -13,5 +13,5 @@ USER vscode
 RUN pipx install invoke && \
   invoke --print-completion-script=bash >> ~/.bash_completion
 
-RUN pipx install poetry && \
-  poetry completions bash >> ~/.bash_completion
+RUN pipx install uv && \
+  uv generate-shell-completion bash >> ~/.bash_completion
