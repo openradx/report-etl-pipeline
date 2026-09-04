@@ -10,60 +10,23 @@ import gzip
 import json
 from datetime import date, datetime, timezone
 from pathlib import Path
-from typing import ClassVar
 
 import pytest
-from dagster import InitResourceContext, materialize
-from pydicom import Dataset
+from dagster import materialize
+from helpers import (
+    PACS_AET,
+    PACS_LINK_TEMPLATE,
+    FakeAditResource,
+    make_report_instance,
+    make_study,
+    reports_file,
+)
 
 from radis_etl_tkhd.assets.revised_reports import collected_reports, revised_reports
 from radis_etl_tkhd.io_managers import ReportIOManagerFactory
 from radis_etl_tkhd.models import SanitizedReport
-from radis_etl_tkhd.resources import AditResource
 
 PARTITION = "2024-05-01"
-PACS_AET = "TESTAET"
-PACS_LINK_TEMPLATE = "http://pacs.test/viewer?acc={accession_number}"
-
-
-class FakeAditResource(AditResource):
-    """ADIT resource that serves canned studies and report instances instead of calling ADIT."""
-
-    studies: ClassVar[list[Dataset]] = []
-    instances: ClassVar[dict[str, Dataset]] = {}
-
-    def setup_for_execution(self, context: InitResourceContext) -> None:
-        assert context.log
-        self._logger = context.log
-
-    def fetch_studies_with_sr(self, ae_title: str, start: datetime, end: datetime) -> list[Dataset]:
-        return list(self.studies)
-
-    def fetch_report_dataset(self, ae_title: str, study_instance_uid: str) -> Dataset | None:
-        return self.instances.get(study_instance_uid)
-
-
-def make_study(study_uid: str) -> Dataset:
-    study = Dataset()
-    study.StudyInstanceUID = study_uid
-    study.ModalitiesInStudy = ["CT", "SR"]
-    return study
-
-
-def make_report_instance(study_uid: str, accession_number: str, sop_uid: str, text: str) -> Dataset:
-    instance = Dataset()
-    instance.PatientID = "1005"
-    instance.PatientBirthDate = "19760829"
-    instance.PatientSex = "F"
-    instance.StudyInstanceUID = study_uid
-    instance.AccessionNumber = accession_number
-    instance.StudyDescription = "CT Thorax"
-    instance.StudyDate = "20240501"
-    instance.StudyTime = "103000"
-    instance.SeriesInstanceUID = f"{study_uid}.1"
-    instance.SOPInstanceUID = sop_uid
-    instance.TextValue = text
-    return instance
 
 
 def make_collected_report(
@@ -92,19 +55,6 @@ def make_collected_report(
     )
 
 
-def reports_file(artifacts_dir: Path) -> Path:
-    return artifacts_dir / f"reports-{PARTITION}.json.gz"
-
-
-@pytest.fixture
-def pipeline_env(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("PACS_NAME", "Test PACS")
-    monkeypatch.setenv("PACS_AE_TITLE", PACS_AET)
-    monkeypatch.setenv("REPORT_LANGUAGE", "de")
-    monkeypatch.setenv("GROUP_ID", "1")
-    monkeypatch.setenv("PACS_LINK_TEMPLATE", PACS_LINK_TEMPLATE)
-
-
 def test_revised_reports_detects_unchanged_changed_and_added_reports(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, pipeline_env: None
 ) -> None:
@@ -116,7 +66,7 @@ def test_revised_reports_detects_unchanged_changed_and_added_reports(
         make_collected_report("1.1", "ACC1", "1.1.9", "Befund A"),
         make_collected_report("1.2", "ACC2", "1.2.9", "Befund B (old)"),
     ]
-    with gzip.open(reports_file(artifacts_dir), "w") as f:
+    with gzip.open(reports_file(artifacts_dir, PARTITION), "w") as f:
         f.write(json.dumps([json.loads(r.model_dump_json()) for r in collected]).encode())
 
     # Reports in the PACS now: study 1 unchanged, study 2 changed, study 3 added.
@@ -163,5 +113,5 @@ def test_revised_reports_detects_unchanged_changed_and_added_reports(
     assert metadata["num_reports_added"].value == 1
 
     # The revised reports replace the previously collected ones in the artifacts directory.
-    with gzip.open(reports_file(artifacts_dir)) as f:
+    with gzip.open(reports_file(artifacts_dir, PARTITION)) as f:
         assert len(json.load(f)) == 3

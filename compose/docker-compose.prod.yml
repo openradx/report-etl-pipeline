@@ -3,6 +3,8 @@ services:
     build:
       target: production
     image: radis_etl_tkhd_prod:latest
+    environment:
+      DAGSTER_DEPLOYMENT: prod
     env_file:
       - ../.env.prod
     volumes:

@@ -117,7 +117,6 @@ class AditResource(ConfigurableResource):
 class RadisResource(ConfigurableResource):
     radis_host: str
     auth_token: str
-    ca_bundle: str
 
     _client: RadisClient = PrivateAttr()
     _logger: DagsterLogManager = PrivateAttr()

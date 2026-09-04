@@ -1,5 +1,8 @@
+import os
+
 from dagster import (
     AssetSelection,
+    DefaultScheduleStatus,
     Definitions,
     EnvVar,
     build_schedule_from_partitioned_job,
@@ -18,11 +21,23 @@ revise_reports_job = define_asset_job(
     selection=AssetSelection.groups("revised_reports"),
 )
 
-# Schedule every day at 2 AM (UTC) / 3 AM (MEZ) / 4 AM (MESZ)
-collect_reports_schedule = build_schedule_from_partitioned_job(collect_reports_job, hour_of_day=2)
+# Schedules start automatically in production only (DAGSTER_DEPLOYMENT=prod is set by the
+# production Compose file). Elsewhere they stay stopped until turned on in the Dagster UI.
+schedule_status = (
+    DefaultScheduleStatus.RUNNING
+    if os.getenv("DAGSTER_DEPLOYMENT") == "prod"
+    else DefaultScheduleStatus.STOPPED
+)
 
-# Schedule every day at 3 AM (UTC) / 4 AM (MEZ) / 5 AM (MESZ)
-revise_reports_schedule = build_schedule_from_partitioned_job(revise_reports_job, hour_of_day=3)
+# Schedule every day at 2 AM local time (see the timezone of the partitions)
+collect_reports_schedule = build_schedule_from_partitioned_job(
+    collect_reports_job, hour_of_day=2, default_status=schedule_status
+)
+
+# Schedule every day at 3 AM local time (see the timezone of the partitions)
+revise_reports_schedule = build_schedule_from_partitioned_job(
+    revise_reports_job, hour_of_day=3, default_status=schedule_status
+)
 
 defs = Definitions(
     assets=assets.all_assets,
@@ -39,7 +54,6 @@ defs = Definitions(
         "radis": resources.RadisResource(
             radis_host=EnvVar("RADIS_HOST"),
             auth_token=EnvVar("RADIS_AUTH_TOKEN"),
-            ca_bundle=EnvVar("CA_BUNDLE"),
         ),
     },
     schedules=[collect_reports_schedule, revise_reports_schedule],

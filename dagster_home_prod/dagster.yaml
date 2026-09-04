@@ -4,6 +4,12 @@ run_coordinator:
   config:
     max_concurrent_runs: 3
 
+# Let the daemon re-execute a failed run (from the failed step on) up to two more times,
+# e.g. after a transient PACS or network error.
+run_retries:
+  enabled: true
+  max_retries: 2
+
 telemetry:
   enabled: false
 
