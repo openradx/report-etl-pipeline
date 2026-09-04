@@ -3,6 +3,8 @@ services:
     build:
       context: ..
     user: "${UID}:${GID}"
+    # Run a minimal init process as PID 1 that forwards signals and reaps zombie processes
+    init: true
     environment:
       DAGSTER_HOME: "/opt/dagster/dagster_home"
     command: >
