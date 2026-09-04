@@ -2,7 +2,7 @@
 
 ## About
 
-RADIS ETL TKHD is a [Dagster](https://dagster.io/) pipeline to extract radiological reports (inside SR Modality instances) from a PACS (by using [ADIT](https://github.com/openradx/adit)) and transfer them to RADIS for creating a full-text search index. The pipeline contains two jobs. `collect_reports_job` collects all reports since the year 2014 (by using Dagster backfills) and also has a schedule to collect reports during the night from the previous day to send them to RADIS. `revise_reports_job` has a schedule to collect reports from the day 7 days before to collect changed or afterwards added reports and send those to RADIS.
+RADIS ETL TKHD is a [Dagster](https://dagster.io/) pipeline to extract radiological reports (inside SR Modality instances) from a PACS (by using [ADIT](https://github.com/openradx/adit)) and transfer them to RADIS for creating a full-text search index. The pipeline contains two jobs. `collect_reports_job` collects all reports since the year 2014 (by using Dagster backfills) and also has a schedule to collect reports during the night from the previous day to send them to RADIS. `revise_reports_job` has a schedule to collect the reports of the day 8 days before again (that is 7 days before the partition of the previous day) to catch reports that were changed or added in the meantime and to send those to RADIS.
 
 ## Setup
 
