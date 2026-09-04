@@ -3,6 +3,8 @@ services:
     build:
       target: development
     image: radis_etl_tkhd_dev:latest
+    environment:
+      DAGSTER_DEPLOYMENT: dev
     ports:
       - "${DAGSTER_DEV_PORT:-3500}:3000"
     env_file:

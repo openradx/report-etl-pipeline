@@ -11,6 +11,7 @@ RADIS ETL TKHD is a [Dagster](https://dagster.io/) pipeline to extract radiologi
 - Copy `example.env` to `.env.dev` or resp. `.env.prod` and edit the settings in there.
 - Artifacts are stored according to `ARTIFACTS_DIR`. If `ARTIFACTS_DIR` is not set then the files are stored in the `DAGSTER_HOME` folder under `storage`.
 - A relative `ARTIFACTS_DIR` path is stored relative to `DAGSTER_HOME` which is `dagster_home_dev` folder in development and `dagster_home_prod` folder in production.
+- The schedules start automatically in production (the production Compose file sets `DAGSTER_DEPLOYMENT=prod`). In development they stay stopped until turned on in the Dagster UI. A schedule that is stopped manually in the UI stays stopped in both environments until it is started again.
 - Production uses Nginx for basic auth and SSL encryption.
   - Generate a password file for basic authentication by using `htpasswd -c .htpasswd <username>` (needs apache2-utils to be installed).
   - Generate SSL certificate with `openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout ssl.key -out ssl.crt` (nothing has to be filled out)

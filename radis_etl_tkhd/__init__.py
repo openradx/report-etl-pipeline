@@ -1,5 +1,8 @@
+import os
+
 from dagster import (
     AssetSelection,
+    DefaultScheduleStatus,
     Definitions,
     EnvVar,
     build_schedule_from_partitioned_job,
@@ -18,11 +21,23 @@ revise_reports_job = define_asset_job(
     selection=AssetSelection.groups("revised_reports"),
 )
 
+# Schedules start automatically in production only (DAGSTER_DEPLOYMENT=prod is set by the
+# production Compose file). Elsewhere they stay stopped until turned on in the Dagster UI.
+schedule_status = (
+    DefaultScheduleStatus.RUNNING
+    if os.getenv("DAGSTER_DEPLOYMENT") == "prod"
+    else DefaultScheduleStatus.STOPPED
+)
+
 # Schedule every day at 2 AM (UTC) / 3 AM (MEZ) / 4 AM (MESZ)
-collect_reports_schedule = build_schedule_from_partitioned_job(collect_reports_job, hour_of_day=2)
+collect_reports_schedule = build_schedule_from_partitioned_job(
+    collect_reports_job, hour_of_day=2, default_status=schedule_status
+)
 
 # Schedule every day at 3 AM (UTC) / 4 AM (MEZ) / 5 AM (MESZ)
-revise_reports_schedule = build_schedule_from_partitioned_job(revise_reports_job, hour_of_day=3)
+revise_reports_schedule = build_schedule_from_partitioned_job(
+    revise_reports_job, hour_of_day=3, default_status=schedule_status
+)
 
 defs = Definitions(
     assets=assets.all_assets,
